@@ -3,6 +3,8 @@ __pycache__/
 *$py.class
 .pytest_cache/
 .env
+.env.*
+!.env.example
 *.log
 ephe/*.se1
 dist/

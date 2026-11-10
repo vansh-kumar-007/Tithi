@@ -21,6 +21,11 @@ A production-quality Python/Flask web application that calculates Hindu Panchang
   - Year-by-year visual calendar grid + detailed table with **local timezone** timestamps.
   - Download **PDF**, **Excel (.xlsx)**, **CSV**, **ICS** calendar files, or print directly.
 - **Bilingual**: Instant English / Hindi toggle that preserves and re-renders active results.
+- **Optional User Accounts & Cloud Storage (Supabase)**:
+  - Email/Password Sign Up, Log In, Log Out, and persistent sessions via Supabase Auth.
+  - **"My Account"** dashboard (`/account`) to manage saved family birth profiles and revisit calculation history.
+  - Explicit **"Save Birth Profile"** and **"Save to Calculation History"** controls (calculator remains usable anonymously without login).
+  - Row Level Security (`auth.uid() = user_id`) and server-verified permanent account deletion (`/api/account/delete`).
 
 ## Installation & Local Setup
 
@@ -32,6 +37,22 @@ python app.py
 ```
 
 Open **http://localhost:5000** in your browser.
+
+### Supabase Setup (Optional — for User Accounts & Cloud Storage)
+
+The calculator works without Supabase configured. To enable accounts, saved birth profiles, calculation history, and account deletion:
+
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open **SQL Editor** in your Supabase Dashboard and execute the full contents of [`supabase/schema.sql`](supabase/schema.sql).
+   This creates `public.saved_birth_profiles` and `public.calculation_history` with strict Row Level Security (`auth.uid() = user_id`) and `ON DELETE CASCADE` links to `auth.users`.
+3. In **Authentication -> Providers -> Email**, ensure Email provider is enabled. Under **Authentication -> URL Configuration**, add your local/production `/account` URL (e.g. `http://localhost:5000/account`) to Redirect URLs.
+4. Copy `.env.example` to `.env` (never commit `.env`) and fill in your credentials from **Project Settings -> API**:
+   ```env
+   SUPABASE_URL=https://your-project-ref.supabase.co
+   SUPABASE_ANON_KEY=your-publishable-or-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
+   ```
+   > **Security note:** `SUPABASE_SERVICE_ROLE_KEY` is used strictly server-side in `services/supabase_service.py` for `/api/account/delete` and is never exposed to browsers or templates.
 
 ### Optional Swiss Ephemeris Data Files
 Without `.se1` files in `ephe/`, `pyswisseph` uses the built-in Moshier ephemeris (accurate for ~3000 BCE – 3000 CE). For maximum precision or extended historical spans, download `seas_18.se1`, `semo_18.se1`, and `sepl_18.se1` from [astro.com](https://www.astro.com/ftp/swisseph/ephe/) into `ephe/`.
@@ -58,14 +79,24 @@ Validated against standard Lahiri Drik Panchang references across Bijnor, Delhi,
 - Circumpolar locations during polar day/night fall back cleanly when sunrise/sunset does not occur.
 - Built-in PDF Devanagari rendering uses system TTF fonts when available (`mangal.ttf` on Windows or `NotoSansDevanagari` on Linux); complex Devanagari conjunct shaping depends on ReportLab's TTF renderer.
 
-## Deployment
+## Deployment (Render Free Tier)
 
-```bash
-# Production environment variables
-SECRET_KEY=replace-with-strong-random-secret
-DEBUG=false
-EPHE_PATH=/app/ephe
-
-# Run with Gunicorn
-gunicorn -w 4 -b 0.0.0.0:8000 "app:create_app()"
-```
+1. Push the project to a **private GitHub repository** (verify `.env` is excluded by `.gitignore`).
+2. On [Render](https://render.com), create a **Free Web Service** connected to your repository:
+   - **Runtime:** Python (`3.11.11` pinned via `.python-version`)
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn -w 1 --timeout 120 --bind 0.0.0.0:$PORT wsgi:app` (configured in `Procfile`)
+3. Set these **Environment Variables** in the Render Dashboard:
+   ```env
+   SECRET_KEY=<generate-strong-random-32+-char-string>
+   DEBUG=false
+   SUPABASE_URL=https://your-project-ref.supabase.co
+   SUPABASE_ANON_KEY=your-publishable-or-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
+   ```
+4. Once Render assigns your live URL (e.g. `https://<your-app>.onrender.com`), configure **Supabase Dashboard → Authentication → URL Configuration**:
+   - **Site URL:** `https://<your-app>.onrender.com`
+   - **Redirect URLs:**
+     - `https://<your-app>.onrender.com/account`
+     - `https://<your-app>.onrender.com/*`
+     - `http://localhost:5000/account` *(for local development)*

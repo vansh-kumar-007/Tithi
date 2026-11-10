@@ -10,6 +10,7 @@ let currentLang = 'en';
 let lastResult = null;
 let selectedCandidateIdx = 0;
 let loadingTimers = [];
+let activeSavedProfileId = null;
 
 function escapeHtml(value) {
   if (value === null || value === undefined) return '';
@@ -20,6 +21,7 @@ function escapeHtml(value) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+window.escapeHtml = escapeHtml;
 
 const I18N = {
   en: {
@@ -66,6 +68,11 @@ const I18N = {
     candidatePrompt: 'Select Candidate Tithi Calendar:',
     unknownTime: 'Unknown (Full Local Day)',
     optionLabel: 'Option',
+    saveProfileBtn: 'Save Birth Profile',
+    saveHistoryBtn: 'Save to Calculation History',
+    cloudSavePrompt: 'Save this profile or calculation to your account:',
+    loginToSavePrompt: 'Want to save this birth profile or calculation?',
+    loginToSaveBtn: 'Log In / Sign Up to Save',
   },
   hi: {
     resultsHeroTitle: 'आपका हिंदू पंचांग',
@@ -111,6 +118,11 @@ const I18N = {
     candidatePrompt: 'संभावित तिथि कैलेंडर चुनें:',
     unknownTime: 'अज्ञात (संपूर्ण दिन का विश्लेषण)',
     optionLabel: 'विकल्प',
+    saveProfileBtn: 'जन्म प्रोफ़ाइल सहेजें',
+    saveHistoryBtn: 'गणना इतिहास में सहेजें',
+    cloudSavePrompt: 'इस प्रोफ़ाइल या गणना को अपने खाते में सहेजें:',
+    loginToSavePrompt: 'क्या आप यह जन्म प्रोफ़ाइल या गणना सहेजना चाहते हैं?',
+    loginToSaveBtn: 'सहेजने के लिए लॉग इन / साइन अप करें',
   },
 };
 
@@ -335,10 +347,15 @@ document.addEventListener('DOMContentLoaded', function () {
   });
   updateConventionExplanation();
 
-  // Main form submit
+  // Main form submit & reset profile linkage on manual edits
   const form = document.getElementById('mainForm');
   if (form) {
     form.addEventListener('submit', handleFormSubmit);
+    ['birth_date', 'location_query'].forEach(id => {
+      document.getElementById(id)?.addEventListener('input', () => {
+        activeSavedProfileId = null;
+      });
+    });
   }
 
   if (window.location.hash === '#calculator') {
@@ -502,6 +519,46 @@ function showError(msg) {
   document.body.appendChild(alert);
   setTimeout(() => alert.remove(), 6500);
 }
+window.showError = showError;
+
+function renderCloudSaveBarHtml() {
+  if (!window.TithiAuth || !window.TithiAuth.isConfigured()) return '';
+  if (window.TithiAuth.isAuthenticated()) {
+    return `
+      <div class="cloud-save-bar p-3 mb-4 rounded d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div class="small fw-semibold text-navy">
+          <i class="fas fa-cloud-upload-alt text-saffron me-2"></i>${escapeHtml(t('cloudSavePrompt'))}
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-sm btn-saffron" id="btn-save-profile"
+                  onclick="window.TithiAuth.openSaveProfileModal()">
+            <i class="fas fa-bookmark me-1"></i>${escapeHtml(t('saveProfileBtn'))}
+          </button>
+          <button type="button" class="btn btn-sm btn-outline-primary" id="btn-save-history"
+                  onclick="window.TithiAuth.saveCalculationHistory()">
+            <i class="fas fa-history me-1"></i>${escapeHtml(t('saveHistoryBtn'))}
+          </button>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="cloud-save-bar p-3 mb-4 rounded d-flex flex-wrap align-items-center justify-content-between gap-2">
+      <div class="small text-muted">
+        <i class="fas fa-lock text-saffron me-2"></i>${escapeHtml(t('loginToSavePrompt'))}
+      </div>
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="window.TithiAuth.openAuthModal('login')">
+        <i class="fas fa-sign-in-alt me-1"></i>${escapeHtml(t('loginToSaveBtn'))}
+      </button>
+    </div>`;
+}
+
+function refreshCloudSaveBar() {
+  const host = document.getElementById('cloud-save-bar-host');
+  if (host) {
+    host.innerHTML = renderCloudSaveBarHtml();
+  }
+}
 
 // ══════════════════════════════════════════════════════
 // Results Rendering
@@ -542,7 +599,8 @@ function renderResults(data) {
       <div class="results-subtitle">${escapeHtml(p.birth_date_display)} · ${escapeHtml(p.location_name)}</div>
     </div>
   </div>
-  <div class="container py-4">`;
+  <div class="container py-4">
+  <div id="cloud-save-bar-host">${renderCloudSaveBarHtml()}</div>`;
 
   // Ambiguity alert
   if (p.ambiguity_message) {
@@ -856,11 +914,15 @@ function renderResults(data) {
 }
 
 // ══════════════════════════════════════════════════════
-// Export
+// Export & External Integration Hooks
 // ══════════════════════════════════════════════════════
 async function exportData(type) {
-  if (!lastResult || !lastResult._payload) {
+  if (!lastResult) {
     showError('Please calculate first.');
+    return;
+  }
+  if (!lastResult._payload) {
+    showError('Export unavailable: historical calculation input data could not be validated. Please recalculate.');
     return;
   }
   try {
@@ -891,3 +953,67 @@ async function exportData(type) {
     showError('Export failed: ' + err.message);
   }
 }
+
+function fillCalculatorForm(inp) {
+  if (!inp) return;
+  const setVal = (id, v) => {
+    const el = document.getElementById(id);
+    if (el && v !== undefined && v !== null) el.value = v;
+  };
+  setVal('birth_date', inp.birth_date || '');
+  setVal('location_query', inp.location_name || '');
+  if (inp.lat !== undefined && inp.lon !== undefined) {
+    setLocation({
+      lat: inp.lat,
+      lon: inp.lon,
+      timezone: inp.timezone || 'UTC',
+      display_name: inp.location_name || `${inp.lat}, ${inp.lon}`,
+    });
+    const status = document.getElementById('geocode-status');
+    if (status) {
+      status.innerHTML = `<span class="geocode-success"><i class="fas fa-check-circle me-1"></i>${escapeHtml(inp.location_name || '')}</span>`;
+    }
+  }
+  const mode = inp.birth_time_mode || 'unknown';
+  switchTimeMode(mode);
+  if (mode === 'exact') setVal('birth_time', inp.birth_time || '');
+  if (mode === 'approximate') {
+    setVal('approx_start', inp.birth_time_start || '');
+    setVal('approx_end', inp.birth_time_end || '');
+  }
+  setVal('ayanamsha', inp.ayanamsha || 'lahiri');
+  setVal('lunar_system', inp.lunar_system || 'amanta');
+  setVal('observance_method', inp.observance_method || 'sunrise');
+  setVal('adhika_rule', inp.adhika_rule || 'nija');
+  if (inp.start_year) setVal('start_year', inp.start_year);
+  if (inp.end_year) setVal('end_year', inp.end_year);
+  updateConventionExplanation();
+}
+
+async function runCalculationFromForm() {
+  const form = document.getElementById('mainForm');
+  if (form) {
+    await handleFormSubmit({ preventDefault: () => {} });
+  }
+}
+
+function displaySavedCalculation(resultData, validInputPayload) {
+  selectedCandidateIdx = 0;
+  lastResult = { ...resultData, _payload: validInputPayload || null };
+  renderResults(lastResult);
+  const resSection = document.getElementById('results-section');
+  if (resSection) {
+    resSection.style.display = '';
+    resSection.scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+window.TithiCalculator = {
+  fillCalculatorForm,
+  runCalculationFromForm,
+  displaySavedCalculation,
+  getLastCalculation: () => lastResult,
+  setActiveSavedProfileId: (id) => { activeSavedProfileId = id; },
+  getActiveSavedProfileId: () => activeSavedProfileId,
+  refreshCloudSaveBar,
+};

@@ -3,6 +3,7 @@ Flask application — routes, validation, and API endpoints.
 """
 from __future__ import annotations
 
+import os
 from datetime import date, datetime
 from typing import Any, Dict, Optional
 
@@ -18,10 +19,11 @@ from flask import (
     url_for,
 )
 from flask_caching import Cache
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 from calculations.astronomy import init_ephemeris, set_ayanamsha
 from calculations.birthday_dates import OBSERVANCE_LABELS
-from config import Config
+from config import Config, ProductionConfig, validate_production_config
 from models.calculation import CalculationRequest
 from services.export_service import export_csv, export_excel, export_ics, export_pdf
 from services.location_service import geocode_location
@@ -33,6 +35,12 @@ from services.panchang_service import (
     FullResult,
     calculate_panchang,
 )
+from services.supabase_service import (
+    SupabaseAuthError,
+    SupabaseConfigError,
+    SupabaseServiceError,
+    delete_supabase_user_account,
+)
 from services.timezone_service import get_timezone_str, localize_datetime
 
 _MAX_YEAR_SPAN = 120
@@ -40,14 +48,42 @@ _MIN_SUPPORTED_YEAR = 1583
 _MAX_SUPPORTED_YEAR = 2500
 
 
-def create_app() -> Flask:
+def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
     app = Flask(__name__)
-    app.config.from_object(Config)
+    is_prod_env = (
+        os.environ.get("RENDER", "").strip().lower() == "true"
+        or os.environ.get("FLASK_ENV", "").strip().lower() == "production"
+    )
+    app.config.from_object(ProductionConfig if is_prod_env else Config)
+    if config_override:
+        app.config.from_mapping(config_override)
+
+    # Validate production secrets unless running in debug mode or automated pytest
+    if "PYTEST_CURRENT_TEST" not in os.environ:
+        validate_production_config(app.config)
+
+    # Respect X-Forwarded-* headers behind Render / reverse proxies for HTTPS URLs
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
     cache = Cache(app)
 
     init_ephemeris(app.config["EPHE_PATH"])
     set_ayanamsha(app.config["DEFAULT_AYANAMSHA"])
+
+    @app.context_processor
+    def inject_public_supabase_config():
+        """Expose only public Supabase URL & anon key to Jinja2 templates."""
+        url = app.config.get("SUPABASE_URL", "")
+        anon_key = app.config.get("SUPABASE_ANON_KEY", "")
+        service_key = app.config.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        return {
+            "SUPABASE_URL": url,
+            "SUPABASE_ANON_KEY": anon_key,
+            "supabase_url": url,
+            "supabase_anon_key": anon_key,
+            "supabase_configured": bool(url and anon_key),
+            "supabase_account_deletion_enabled": bool(url and service_key),
+        }
 
     # ------------------------------------------------------------------ #
     # Request parsing & validation
@@ -400,7 +436,7 @@ def create_app() -> Flask:
             req_model = _parse_calculation_request(data)
             result = _run_calculation_cached(req_model)
             return jsonify(_serialize_result(result))
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return jsonify({"error": str(exc)}), 400
         except Exception:
             app.logger.exception("Calculation error")
@@ -409,6 +445,73 @@ def create_app() -> Flask:
     @app.route("/results")
     def results():
         return redirect(url_for("index") + "#calculator")
+
+    @app.route("/account")
+    def account():
+        """Render the My Account dashboard (session & RLS handled client-side)."""
+        return render_template("account.html")
+
+    @app.route("/api/supabase-status")
+    def supabase_status():
+        """Safe diagnostic endpoint returning only booleans (never actual credentials)."""
+        url = app.config.get("SUPABASE_URL", "")
+        anon_key = app.config.get("SUPABASE_ANON_KEY", "")
+        return jsonify({
+            "supabase_url_loaded": bool(url),
+            "supabase_anon_key_loaded": bool(anon_key),
+            "supabase_configured": bool(url and anon_key),
+        })
+
+    @app.route("/api/validate-input", methods=["POST"])
+    def validate_historical_input():
+        """Validate saved historical calculation input payload before export/recalculation."""
+        try:
+            data = request.get_json(silent=True) or {}
+            _parse_calculation_request(data)
+            return jsonify({"valid": True})
+        except (ValueError, TypeError) as exc:
+            return jsonify({"valid": False, "error": str(exc)}), 400
+
+    @app.route("/api/account/delete", methods=["POST"])
+    def delete_account():
+        """
+        Permanently delete the authenticated user's Supabase Auth account
+        (cascading to saved_birth_profiles and calculation_history).
+        Requires a valid Supabase Bearer JWT and explicit confirmation.
+        """
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Authentication required. Missing Bearer token."}), 401
+        token = auth_header[7:].strip()
+        if not token:
+            return jsonify({"error": "Authentication required. Empty Bearer token."}), 401
+
+        body = request.get_json(silent=True) or {}
+        if str(body.get("confirm_text", "")).strip().upper() != "DELETE":
+            return jsonify({"error": "Please type DELETE to confirm permanent account deletion."}), 400
+
+        try:
+            deleted = delete_supabase_user_account(
+                access_token=token,
+                supabase_url=app.config.get("SUPABASE_URL", ""),
+                anon_key=app.config.get("SUPABASE_ANON_KEY", ""),
+                service_role_key=app.config.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+            )
+            return jsonify({
+                "deleted": True,
+                "email": deleted.get("email"),
+                "message": "Your account, saved birth profiles, and calculation history have been permanently deleted.",
+            })
+        except SupabaseAuthError as exc:
+            return jsonify({"error": str(exc)}), 401
+        except SupabaseConfigError as exc:
+            return jsonify({"error": str(exc)}), 503
+        except SupabaseServiceError as exc:
+            app.logger.warning("Account deletion upstream error: %s", exc)
+            return jsonify({"error": str(exc)}), 502
+        except Exception:
+            app.logger.exception("Unexpected error during account deletion")
+            return jsonify({"error": "Unable to delete account right now."}), 500
 
     # ------------------------------------------------------------------ #
     # Export endpoints (stateless & multi-worker safe)
@@ -433,7 +536,7 @@ def create_app() -> Flask:
                 mimetype="text/csv",
                 headers={"Content-Disposition": "attachment; filename=hindu_birthdays.csv"},
             )
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return jsonify({"error": str(exc)}), 400
 
     @app.route("/export/excel", methods=["POST"])
@@ -448,7 +551,7 @@ def create_app() -> Flask:
                 mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 headers={"Content-Disposition": "attachment; filename=hindu_birthdays.xlsx"},
             )
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return jsonify({"error": str(exc)}), 400
 
     @app.route("/export/pdf", methods=["POST"])
@@ -463,7 +566,7 @@ def create_app() -> Flask:
                 mimetype="application/pdf",
                 headers={"Content-Disposition": "attachment; filename=hindu_birthday_report.pdf"},
             )
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return jsonify({"error": str(exc)}), 400
 
     @app.route("/export/ics", methods=["POST"])
@@ -478,7 +581,7 @@ def create_app() -> Flask:
                 mimetype="text/calendar",
                 headers={"Content-Disposition": "attachment; filename=hindu_birthdays.ics"},
             )
-        except ValueError as exc:
+        except (ValueError, TypeError) as exc:
             return jsonify({"error": str(exc)}), 400
 
     @app.errorhandler(404)
@@ -494,4 +597,6 @@ def create_app() -> Flask:
 
 if __name__ == "__main__":
     app = create_app()
-    app.run(debug=app.config["DEBUG"], port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    host = "127.0.0.1" if app.config["DEBUG"] else "0.0.0.0"
+    app.run(host=host, debug=app.config["DEBUG"], port=port)

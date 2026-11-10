@@ -1,5 +1,7 @@
 Flask>=3.0.3
 Flask-Caching>=2.3.0
+gunicorn>=22.0.0
+python-dotenv>=1.0.1
 pyswisseph>=2.10.3.2
 geopy>=2.4.1
 timezonefinder>=6.5.2

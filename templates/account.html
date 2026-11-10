@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% block title %}My Account — Hindu Tithi Birthday Calculator{% endblock %}
+
+{% block content %}
+<section class="results-hero">
+  <div class="container">
+    <h1 class="results-title" data-en="My Account" data-hi="मेरा खाता">My Account</h1>
+    <p class="results-subtitle"
+       data-en="Manage your saved family birth profiles, revisit calculation history, and control your account data."
+       data-hi="अपनी सहेजी गई जन्म प्रोफ़ाइल, गणना इतिहास और खाते के डेटा को प्रबंधित करें।">
+      Manage your saved family birth profiles, revisit calculation history, and control your account data.
+    </p>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container">
+
+    <!-- Loading state -->
+    <div id="account-loading" class="text-center py-5">
+      <div class="spinner-border text-saffron" role="status"></div>
+      <p class="text-muted mt-3" data-en="Loading your account…" data-hi="आपका खाता लोड हो रहा है…">Loading your account…</p>
+    </div>
+
+    <!-- Missing Supabase Config Notice -->
+    <div id="account-unconfigured" class="panchang-card p-4 text-center" style="display:none;">
+      <div class="fs-1 mb-2">⚙️</div>
+      <h4 data-en="Supabase Not Configured" data-hi="Supabase कॉन्फ़िगर नहीं है">Supabase Not Configured</h4>
+      <p class="text-muted mb-3">
+        Configure <code>SUPABASE_URL</code> and <code>SUPABASE_ANON_KEY</code> in your server environment (<code>.env</code>) and run <code>supabase/schema.sql</code> to enable accounts and cloud storage.
+      </p>
+      <a href="/#calculator" class="btn btn-saffron">
+        <i class="fas fa-calculator me-2"></i>
+        <span data-en="Use Calculator Without Account" data-hi="बिना खाते के कैलकुलेटर उपयोग करें">Use Calculator Without Account</span>
+      </a>
+    </div>
+
+    <!-- Guest / Session Expired State -->
+    <div id="account-guest" class="panchang-card p-5 text-center" style="display:none;">
+      <div class="fs-1 mb-2">🔐</div>
+      <h4 data-en="Sign In to View Your Saved Birthdays" data-hi="अपनी सहेजी गई जन्म तिथियाँ देखने के लिए लॉग इन करें">Sign In to View Your Saved Birthdays</h4>
+      <p class="text-muted mx-auto mb-4" style="max-width: 520px;"
+         data-en="Create an account or log in to save family birth profiles and revisit past Hindu calendar calculations. The calculator remains free to use without logging in."
+         data-hi="परिवार की जन्म प्रोफ़ाइल सहेजने और पिछले पंचांग परिणाम देखने के लिए लॉग इन करें। कैलकुलेटर बिना लॉग इन के भी उपयोग किया जा सकता है।">
+        Create an account or log in to save family birth profiles and revisit past Hindu calendar calculations. The calculator remains free to use without logging in.
+      </p>
+      <div class="d-flex justify-content-center gap-2 flex-wrap">
+        <button type="button" class="btn btn-saffron px-4"
+                onclick="window.TithiAuth && window.TithiAuth.openAuthModal('login')">
+          <i class="fas fa-sign-in-alt me-1"></i>
+          <span data-en="Log In" data-hi="लॉग इन">Log In</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary px-4"
+                onclick="window.TithiAuth && window.TithiAuth.openAuthModal('signup')">
+          <i class="fas fa-user-plus me-1"></i>
+          <span data-en="Sign Up" data-hi="साइन अप">Sign Up</span>
+        </button>
+        <a href="/#calculator" class="btn btn-link text-decoration-none">
+          <span data-en="Back to Calculator" data-hi="कैलकुलेटर पर वापस जाएं">Back to Calculator</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Authenticated Dashboard -->
+    <div id="account-dashboard" style="display:none;">
+
+      <!-- Account Overview -->
+      <div class="panchang-card mb-4">
+        <div class="card-header justify-content-between flex-wrap gap-2">
+          <div>
+            <i class="fas fa-user-shield me-2"></i>
+            <span data-en="Account Overview" data-hi="खाता विवरण">Account Overview</span>
+          </div>
+          <a href="/#calculator" class="btn btn-sm btn-saffron">
+            <i class="fas fa-plus me-1"></i>
+            <span data-en="New Calculation" data-hi="नई गणना">New Calculation</span>
+          </a>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 align-items-center">
+            <div class="col-md-5">
+              <div class="panchang-item">
+                <div class="panchang-label" data-en="Signed In Email" data-hi="लॉग-इन ईमेल">Signed In Email</div>
+                <div class="panchang-value text-break" id="account-email">—</div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="panchang-item">
+                <div class="panchang-label" data-en="Account Created" data-hi="खाता निर्माण तिथि">Account Created</div>
+                <div class="panchang-value" id="account-created">—</div>
+              </div>
+            </div>
+            <div class="col-md-3">
+              <div class="panchang-item">
+                <div class="panchang-label" data-en="Saved Profiles / History" data-hi="प्रोफ़ाइल / इतिहास">Saved Profiles / History</div>
+                <div class="panchang-value" id="account-counts">0 / 0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Birth Profiles -->
+      <div class="panchang-card mb-4">
+        <div class="card-header justify-content-between flex-wrap gap-2">
+          <div>
+            <i class="fas fa-users me-2"></i>
+            <span data-en="Saved Birth Profiles" data-hi="सहेजी गई जन्म प्रोफ़ाइल">Saved Birth Profiles</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-light" id="btn-refresh-dashboard"
+                  onclick="window.TithiAuth && window.TithiAuth.loadAccountDashboard()">
+            <i class="fas fa-sync-alt me-1"></i>
+            <span data-en="Refresh" data-hi="रिफ्रेश">Refresh</span>
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="saved-profiles-list"></div>
+        </div>
+      </div>
+
+      <!-- Calculation History -->
+      <div class="panchang-card mb-4">
+        <div class="card-header">
+          <i class="fas fa-history me-2"></i>
+          <span data-en="Calculation History" data-hi="गणना इतिहास">Calculation History</span>
+        </div>
+        <div class="card-body">
+          <div id="calculation-history-list"></div>
+        </div>
+      </div>
+
+      <!-- Danger Zone: Account Deletion -->
+      <div class="panchang-card border border-danger">
+        <div class="card-header bg-danger text-white">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span data-en="Delete Account & Data" data-hi="खाता और डेटा हटाएं">Delete Account &amp; Data</span>
+        </div>
+        <div class="card-body">
+          <p class="mb-3 text-muted"
+             data-en="Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account along with all saved birth profiles and calculation history stored in Supabase."
+             data-hi="आपका खाता हटाना स्थायी है और इसे पूर्ववत नहीं किया जा सकता। इससे आपका लॉगिन खाता, सभी सहेजी गई जन्म प्रोफ़ाइल और गणना इतिहास स्थायी रूप से हट जाएंगे।">
+            Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account along with all saved birth profiles and calculation history stored in Supabase.
+          </p>
+          <button type="button" class="btn btn-outline-danger" id="btn-open-delete-account"
+                  data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
+            <i class="fas fa-trash-alt me-2"></i>
+            <span data-en="Delete My Account" data-hi="मेरा खाता हटाएं">Delete My Account</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Delete Account Confirmation Modal -->
+<div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold" id="deleteAccountModalLabel">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span data-en="Confirm Permanent Account Deletion" data-hi="स्थायी खाता हटाने की पुष्टि करें">Confirm Permanent Account Deletion</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="deleteAccountAlert" class="alert d-none" role="alert"></div>
+        <p class="small text-muted"
+           data-en="This will permanently delete your login account, all saved birth profiles, and all calculation history. This action is irreversible."
+           data-hi="यह आपके लॉगिन खाते, सभी सहेजी गई जन्म प्रोफ़ाइल और सभी गणना इतिहास को स्थायी रूप से हटा देगा।">
+          This will permanently delete your login account, all saved birth profiles, and all calculation history. This action is irreversible.
+        </p>
+        <div class="mb-3">
+          <label for="deleteConfirmInput" class="form-label fw-semibold small"
+                 data-en="Type DELETE below to confirm:" data-hi="पुष्टि करने के लिए नीचे DELETE लिखें:">
+            Type <code>DELETE</code> below to confirm:
+          </label>
+          <input type="text" class="form-control" id="deleteConfirmInput" placeholder="DELETE" autocomplete="off" />
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
+                  data-en="Cancel" data-hi="रद्द करें">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDeleteAccount" disabled
+                  onclick="window.TithiAuth && window.TithiAuth.confirmDeleteAccount()">
+            <span data-en="Permanently Delete Account" data-hi="स्थायी रूप से खाता हटाएं">Permanently Delete Account</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rename Profile Modal -->
+<div class="modal fade" id="renameProfileModal" tabindex="-1" aria-labelledby="renameProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="renameProfileModalLabel">
+          <i class="fas fa-edit me-2"></i>
+          <span data-en="Edit Profile Label" data-hi="प्रोफ़ाइल नाम बदलें">Edit Profile Label</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="renameProfileAlert" class="alert d-none" role="alert"></div>
+        <form id="renameProfileForm" novalidate>
+          <input type="hidden" id="renameProfileId" />
+          <div class="mb-3">
+            <label for="renameProfileLabelInput" class="form-label fw-semibold"
+                   data-en="Profile Label" data-hi="प्रोफ़ाइल नाम">Profile Label</label>
+            <input type="text" class="form-control" id="renameProfileLabelInput" maxlength="80" required />
+          </div>
+          <button type="submit" class="btn btn-saffron w-100 fw-semibold" id="btnRenameProfileSubmit">
+            <span data-en="Update Label" data-hi="नाम अपडेट करें">Update Label</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

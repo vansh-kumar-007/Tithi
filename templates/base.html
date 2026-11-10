@@ -23,10 +23,55 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navMenu">
-      <ul class="navbar-nav ms-auto align-items-lg-center">
+      <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-1">
         <li class="nav-item"><a class="nav-link" href="/#calculator" data-en="Calculator" data-hi="कैलकुलेटर">Calculator</a></li>
         <li class="nav-item"><a class="nav-link" href="/#how-it-works" data-en="How It Works" data-hi="यह कैसे काम करता है">How It Works</a></li>
         <li class="nav-item"><a class="nav-link" href="/#faq" data-en="FAQ" data-hi="सामान्य प्रश्न">FAQ</a></li>
+
+        <!-- User Account Section -->
+        <li class="nav-item ms-lg-2 mt-2 mt-lg-0" id="nav-auth-container">
+          <div id="nav-auth-loading" class="text-light opacity-75 small px-2" style="display:none;">
+            <i class="fas fa-spinner fa-spin me-1"></i>
+          </div>
+
+          <div id="nav-auth-guest" class="d-flex align-items-center gap-2">
+            <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3" id="btn-nav-login"
+                    onclick="window.TithiAuth && window.TithiAuth.openAuthModal('login')">
+              <i class="fas fa-sign-in-alt me-1"></i>
+              <span data-en="Log In" data-hi="लॉग इन">Log In</span>
+            </button>
+            <button type="button" class="btn btn-sm btn-saffron rounded-pill px-3" id="btn-nav-signup"
+                    onclick="window.TithiAuth && window.TithiAuth.openAuthModal('signup')">
+              <i class="fas fa-user-plus me-1"></i>
+              <span data-en="Sign Up" data-hi="साइन अप">Sign Up</span>
+            </button>
+          </div>
+
+          <div id="nav-auth-user" class="dropdown" style="display:none;">
+            <button class="btn btn-sm btn-account-pill dropdown-toggle d-flex align-items-center gap-2"
+                    type="button" id="accountDropdownBtn" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user-circle"></i>
+              <span id="nav-user-email" class="text-truncate" style="max-width: 160px;">Account</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="accountDropdownBtn">
+              <li>
+                <a class="dropdown-item" href="/account">
+                  <i class="fas fa-id-card me-2 text-saffron"></i>
+                  <span data-en="My Account" data-hi="मेरा खाता">My Account</span>
+                </a>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <button type="button" class="dropdown-item text-danger" id="btn-nav-logout"
+                        onclick="window.TithiAuth && window.TithiAuth.logout()">
+                  <i class="fas fa-sign-out-alt me-2"></i>
+                  <span data-en="Log Out" data-hi="लॉग आउट">Log Out</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </li>
+
         <li class="nav-item">
           <div class="language-toggle ms-lg-2 mt-2 mt-lg-0">
             <button id="btn-lang-en" type="button" class="btn btn-sm btn-lang active" onclick="setLang('en')">EN</button>
@@ -42,6 +87,105 @@
   {% block content %}{% endblock %}
 </main>
 
+<!-- Auth Modal (Login / Signup) -->
+<div class="modal fade" id="authModal" tabindex="-1" aria-labelledby="authModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="authModalLabel">
+          🕉 <span data-en="Your Hindu Tithi Account" data-hi="आपका हिंदू तिथि खाता">Your Hindu Tithi Account</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="authModalAlert" class="alert d-none" role="alert"></div>
+
+        <ul class="nav nav-pills nav-justified mb-4" id="authTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="auth-tab-login" type="button"
+                    onclick="window.TithiAuth && window.TithiAuth.switchAuthTab('login')"
+                    data-en="Log In" data-hi="लॉग इन">Log In</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="auth-tab-signup" type="button"
+                    onclick="window.TithiAuth && window.TithiAuth.switchAuthTab('signup')"
+                    data-en="Sign Up" data-hi="साइन अप">Sign Up</button>
+          </li>
+        </ul>
+
+        <!-- Login Form -->
+        <form id="loginForm" novalidate>
+          <div class="mb-3">
+            <label for="loginEmail" class="form-label fw-semibold" data-en="Email Address" data-hi="ईमेल पता">Email Address</label>
+            <input type="email" class="form-control" id="loginEmail" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="mb-3">
+            <label for="loginPassword" class="form-label fw-semibold" data-en="Password" data-hi="पासवर्ड">Password</label>
+            <input type="password" class="form-control" id="loginPassword" required autocomplete="current-password" minlength="6" />
+          </div>
+          <button type="submit" class="btn btn-saffron w-100 py-2 fw-semibold" id="btnLoginSubmit">
+            <span data-en="Log In" data-hi="लॉग इन करें">Log In</span>
+          </button>
+        </form>
+
+        <!-- Signup Form -->
+        <form id="signupForm" class="d-none" novalidate>
+          <div class="mb-3">
+            <label for="signupEmail" class="form-label fw-semibold" data-en="Email Address" data-hi="ईमेल पता">Email Address</label>
+            <input type="email" class="form-control" id="signupEmail" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="mb-3">
+            <label for="signupPassword" class="form-label fw-semibold" data-en="Password (min 6 characters)" data-hi="पासवर्ड (न्यूनतम 6 अक्षर)">Password (min 6 characters)</label>
+            <input type="password" class="form-control" id="signupPassword" required autocomplete="new-password" minlength="6" />
+          </div>
+          <div class="mb-3">
+            <label for="signupPasswordConfirm" class="form-label fw-semibold" data-en="Confirm Password" data-hi="पासवर्ड की पुष्टि करें">Confirm Password</label>
+            <input type="password" class="form-control" id="signupPasswordConfirm" required autocomplete="new-password" minlength="6" />
+          </div>
+          <button type="submit" class="btn btn-saffron w-100 py-2 fw-semibold" id="btnSignupSubmit">
+            <span data-en="Create Account" data-hi="खाता बनाएं">Create Account</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Save Birth Profile Modal -->
+<div class="modal fade" id="saveProfileModal" tabindex="-1" aria-labelledby="saveProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="saveProfileModalLabel">
+          <i class="fas fa-bookmark me-2"></i>
+          <span data-en="Save Birth Profile" data-hi="जन्म प्रोफ़ाइल सहेजें">Save Birth Profile</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="saveProfileAlert" class="alert d-none" role="alert"></div>
+        <form id="saveProfileForm" novalidate>
+          <div class="mb-3">
+            <label for="profileLabelInput" class="form-label fw-semibold" data-en="Profile Label (e.g., Self, Mom, Aarav)" data-hi="प्रोफ़ाइल नाम (जैसे: स्वयं, माँ, आरव)">
+              Profile Label (e.g., Self, Mom, Aarav)
+            </label>
+            <input type="text" class="form-control" id="profileLabelInput" maxlength="80" required placeholder="e.g., Self" />
+          </div>
+          <div class="form-check mb-3">
+            <input class="form-check-input" type="checkbox" id="alsoSaveHistoryCheck" checked />
+            <label class="form-check-label small" for="alsoSaveHistoryCheck" data-en="Also save this calculation result to Calculation History" data-hi="इस गणना परिणाम को गणना इतिहास में भी सहेजें">
+              Also save this calculation result to Calculation History
+            </label>
+          </div>
+          <button type="submit" class="btn btn-saffron w-100 py-2 fw-semibold" id="btnSaveProfileConfirm">
+            <span data-en="Save Profile" data-hi="प्रोफ़ाइल सहेजें">Save Profile</span>
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 <footer class="footer mt-auto py-4">
   <div class="container text-center">
     <div class="om-divider">🕉</div>
@@ -55,8 +199,18 @@
   </div>
 </footer>
 
+<script>
+  window.SUPABASE_CONFIG = {
+    url: {{ supabase_url | tojson }},
+    anonKey: {{ supabase_anon_key | tojson }},
+    configured: {{ supabase_configured | tojson }},
+    accountDeletionEnabled: {{ supabase_account_deletion_enabled | tojson }}
+  };
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+<script src="{{ url_for('static', filename='js/supabase_auth.js') }}"></script>
 {% block scripts %}{% endblock %}
 </body>
 </html>
