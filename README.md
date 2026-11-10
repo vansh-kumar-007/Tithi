@@ -2,6 +2,10 @@
 
 A production-quality Python/Flask web application that calculates Hindu Panchang birth details and annual Hindu Tithi birthdays using Swiss Ephemeris astronomical calculations.
 
+## Live Website
+
+- **Production App:** [https://tithi-f24b.onrender.com/](https://tithi-f24b.onrender.com/) *(Hosted on Render with Supabase Auth & PostgreSQL)*
+
 ## Features
 
 - **Accurate Tithi & Panchang Engine** via Swiss Ephemeris (`pyswisseph`) with thread-safe ayanamsha support (Lahiri default, plus Raman, Krishnamurti, Yukteshwar, True Citra).
@@ -94,9 +98,9 @@ Validated against standard Lahiri Drik Panchang references across Bijnor, Delhi,
    SUPABASE_ANON_KEY=your-publishable-or-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
    ```
-4. Once Render assigns your live URL (e.g. `https://<your-app>.onrender.com`), configure **Supabase Dashboard → Authentication → URL Configuration**:
-   - **Site URL:** `https://<your-app>.onrender.com`
+4. Configure **Supabase Dashboard → Authentication → URL Configuration** for the live deployment (`https://tithi-f24b.onrender.com`):
+   - **Site URL:** `https://tithi-f24b.onrender.com`
    - **Redirect URLs:**
-     - `https://<your-app>.onrender.com/account`
-     - `https://<your-app>.onrender.com/*`
+     - `https://tithi-f24b.onrender.com/account`
+     - `https://tithi-f24b.onrender.com/*`
      - `http://localhost:5000/account` *(for local development)*
