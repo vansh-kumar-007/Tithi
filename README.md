@@ -30,6 +30,12 @@ A production-quality Python/Flask web application that calculates Hindu Panchang
   - **"My Account"** dashboard (`/account`) to manage saved family birth profiles and revisit calculation history.
   - Explicit **"Save Birth Profile"** and **"Save to Calculation History"** controls (calculator remains usable anonymously without login).
   - Row Level Security (`auth.uid() = user_id`) and server-verified permanent account deletion (`/api/account/delete`).
+- **Google Calendar Sync & Freemium Plus Plan (V1.1)**:
+  - Secure server-side Google OAuth 2.0 (`calendar.events`, `openid`, `email`) with CSRF state binding and Fernet-encrypted token storage.
+  - **Free Tier:** Up to 3 saved birth profiles, 1 connected Google account, sync 1 birth profile for upcoming 12 months, manage/delete Tithi events, and disconnect anytime.
+  - **14-Day Tithi Plus Trial & Plus Entitlements:** Once-per-account 14-day free trial (no card required, zero auto-charge) unlocking unlimited saved profiles, bulk multi-profile sync, upcoming N years, specific year (`1583–2500`), custom year ranges (up to 120 years per calculation), and year-range deletion.
+  - Privacy-respecting all-day Google Calendar events (omitting DOB, exact birth time, and coordinates) with duplicate prevention and ownership-verified deletion.
+  - Dedicated bilingual Privacy Policy (`/privacy`) and Google Cloud setup guide ([`docs/google_calendar_setup.md`](docs/google_calendar_setup.md)).
 
 ## Installation & Local Setup
 
@@ -47,16 +53,20 @@ Open **http://localhost:5000** in your browser.
 The calculator works without Supabase configured. To enable accounts, saved birth profiles, calculation history, and account deletion:
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** in your Supabase Dashboard and execute the full contents of [`supabase/schema.sql`](supabase/schema.sql).
-   This creates `public.saved_birth_profiles` and `public.calculation_history` with strict Row Level Security (`auth.uid() = user_id`) and `ON DELETE CASCADE` links to `auth.users`.
+2. Open **SQL Editor** in your Supabase Dashboard and execute [`supabase/schema.sql`](supabase/schema.sql), followed by the V1.1 migration [`supabase/migrations/v1_1_google_calendar_entitlements.sql`](supabase/migrations/v1_1_google_calendar_entitlements.sql).
+   This creates all user-owned tables with strict Row Level Security (`auth.uid() = user_id`), server-only encrypted OAuth tables, atomic trial activation, Free 3-profile database/backend enforcement, and `ON DELETE CASCADE` links to `auth.users`.
 3. In **Authentication -> Providers -> Email**, ensure Email provider is enabled. Under **Authentication -> URL Configuration**, add your local/production `/account` URL (e.g. `http://localhost:5000/account`) to Redirect URLs.
-4. Copy `.env.example` to `.env` (never commit `.env`) and fill in your credentials from **Project Settings -> API**:
+4. Copy `.env.example` to `.env` (never commit `.env`) and fill in your credentials from **Project Settings -> API** and **Google Cloud Console** (see [`docs/google_calendar_setup.md`](docs/google_calendar_setup.md)):
    ```env
    SUPABASE_URL=https://your-project-ref.supabase.co
    SUPABASE_ANON_KEY=your-publishable-or-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
+   GOOGLE_CLIENT_ID=your-google-oauth-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-google-oauth-client-secret
+   GOOGLE_REDIRECT_URI=http://localhost:5000/auth/google/callback
+   GOOGLE_TOKEN_ENCRYPTION_KEY=replace-with-32-byte-url-safe-base64-fernet-key
    ```
-   > **Security note:** `SUPABASE_SERVICE_ROLE_KEY` is used strictly server-side in `services/supabase_service.py` for `/api/account/delete` and is never exposed to browsers or templates.
+   > **Security note:** `SUPABASE_SERVICE_ROLE_KEY`, `GOOGLE_CLIENT_SECRET`, and `GOOGLE_TOKEN_ENCRYPTION_KEY` stay strictly server-side and are never exposed to browsers or templates.
 
 ### Optional Swiss Ephemeris Data Files
 Without `.se1` files in `ephe/`, `pyswisseph` uses the built-in Moshier ephemeris (accurate for ~3000 BCE – 3000 CE). For maximum precision or extended historical spans, download `seas_18.se1`, `semo_18.se1`, and `sepl_18.se1` from [astro.com](https://www.astro.com/ftp/swisseph/ephe/) into `ephe/`.
@@ -97,6 +107,10 @@ Validated against standard Lahiri Drik Panchang references across Bijnor, Delhi,
    SUPABASE_URL=https://your-project-ref.supabase.co
    SUPABASE_ANON_KEY=your-publishable-or-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-secret-key
+   GOOGLE_CLIENT_ID=<your-google-oauth-client-id>
+   GOOGLE_CLIENT_SECRET=<your-google-oauth-client-secret>
+   GOOGLE_REDIRECT_URI=https://tithi-f24b.onrender.com/auth/google/callback
+   GOOGLE_TOKEN_ENCRYPTION_KEY=<generated-fernet-key>
    ```
 4. Configure **Supabase Dashboard → Authentication → URL Configuration** for the live deployment (`https://tithi-f24b.onrender.com`):
    - **Site URL:** `https://tithi-f24b.onrender.com`

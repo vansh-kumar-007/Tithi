@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Privacy & Google Calendar Permissions — Hindu Tithi Birthday Calculator{% endblock %}
+
+{% block content %}
+<section class="results-hero">
+  <div class="container">
+    <h1 class="results-title" data-en="Privacy Policy & Google Calendar Permissions" data-hi="गोपनीयता नीति और Google कैलेंडर अनुमतियाँ">
+      Privacy Policy &amp; Google Calendar Permissions
+    </h1>
+    <p class="results-subtitle"
+       data-en="How Tithi protects your birth data, Supabase account, and Google Calendar connection."
+       data-hi="तिथि आपके जन्म डेटा, Supabase खाते और Google कैलेंडर कनेक्शन की सुरक्षा कैसे करता है।">
+      How Tithi protects your birth data, Supabase account, and Google Calendar connection.
+    </p>
+  </div>
+</section>
+
+<section class="py-5">
+  <div class="container" style="max-width: 880px;">
+
+    <div class="panchang-card mb-4">
+      <div class="card-header">
+        <i class="fab fa-google me-2"></i>
+        <span data-en="1. Minimal Google Calendar Permissions (OAuth Scopes)" data-hi="1. न्यूनतम Google कैलेंडर अनुमतियाँ (OAuth स्कोप)">
+          1. Minimal Google Calendar Permissions (OAuth Scopes)
+        </span>
+      </div>
+      <div class="card-body">
+        <p data-en="Tithi requests only the minimum OAuth scopes strictly required to synchronize Hindu birthday reminders:"
+           data-hi="तिथि केवल हिंदू जन्मदिन अनुस्मारक सिंक करने के लिए आवश्यक न्यूनतम OAuth अनुमतियाँ ही मांगता है:">
+          Tithi requests only the minimum OAuth scopes strictly required to synchronize Hindu birthday reminders:
+        </p>
+        <ul>
+          <li>
+            <code>https://www.googleapis.com/auth/calendar.events</code> —
+            <span data-en="Used solely to create, update, verify ownership of, and delete Tithi-created Hindu birthday events on your primary Google Calendar."
+                  data-hi="केवल आपके प्राथमिक Google कैलेंडर पर तिथि द्वारा बनाए गए हिंदू जन्मदिन इवेंट्स बनाने, अपडेट करने, स्वामित्व सत्यापित करने और हटाने के लिए उपयोग किया जाता है।">
+              Used solely to create, update, verify ownership of, and delete Tithi-created Hindu birthday events on your primary Google Calendar.
+            </span>
+          </li>
+          <li>
+            <code>openid</code> &amp; <code>email</code> —
+            <span data-en="Used solely to identify and display which Google account email is connected in your My Account dashboard."
+                  data-hi="केवल यह पहचानने और दिखाने के लिए कि आपके 'मेरा खाता' डैशबोर्ड में कौन-सा Google ईमेल जुड़ा है।">
+              Used solely to identify and display which Google account email is connected in your My Account dashboard.
+            </span>
+          </li>
+        </ul>
+        <p class="mb-0 text-muted small"
+           data-en="Tithi NEVER requests permission to read Gmail messages, Google Drive files, Google Contacts, or unrelated personal calendar entries."
+           data-hi="तिथि कभी भी Gmail संदेश, Google Drive फ़ाइलें, Google Contacts या अन्य व्यक्तिगत कैलेंडर प्रविष्टियाँ पढ़ने की अनुमति नहीं मांगता।">
+          Tithi NEVER requests permission to read Gmail messages, Google Drive files, Google Contacts, or unrelated personal calendar entries.
+        </p>
+      </div>
+    </div>
+
+    <div class="panchang-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-calendar-check me-2"></i>
+        <span data-en="2. What Tithi Writes to Google Calendar" data-hi="2. तिथि Google कैलेंडर में क्या जोड़ता है">
+          2. What Tithi Writes to Google Calendar
+        </span>
+      </div>
+      <div class="card-body">
+        <p data-en="Each Hindu birthday is created as an individual all-day event (since Hindu lunar dates shift across Gregorian dates every year). Event descriptions include only the profile label, Lunar Month, Paksha & Tithi, local Tithi window, and observance convention."
+           data-hi="प्रत्येक हिंदू जन्मदिन को एक अलग पूर्ण-दिवस (All-Day) इवेंट के रूप में बनाया जाता है। इवेंट विवरण में केवल प्रोफ़ाइल नाम, चंद्र मास, पक्ष व तिथि, स्थानीय तिथि समय और गणना नियम शामिल होते हैं।">
+          Each Hindu birthday is created as an individual all-day event (since Hindu lunar dates shift across Gregorian dates every year). Event descriptions include only the profile label, Lunar Month, Paksha &amp; Tithi, local Tithi window, and observance convention.
+        </p>
+        <p class="mb-0"
+           data-en="Privacy Protection: Tithi deliberately omits sensitive birth details such as your exact date of birth, exact birth time, and birthplace address/coordinates from Google Calendar event descriptions."
+           data-hi="गोपनीयता सुरक्षा: तिथि जानबूझकर आपकी सटीक जन्म तिथि, जन्म समय और जन्मस्थान के पते/निर्देशांक को Google कैलेंडर विवरण में शामिल नहीं करता है।">
+          <strong>Privacy Protection:</strong> Tithi deliberately omits sensitive birth details such as your exact date of birth, exact birth time, and birthplace address/coordinates from Google Calendar event descriptions.
+        </p>
+      </div>
+    </div>
+
+    <div class="panchang-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-lock me-2"></i>
+        <span data-en="3. Encrypted Token Storage & Non-Exposure" data-hi="3. एन्क्रिप्टेड टोकन संग्रहण और सुरक्षा">
+          3. Encrypted Token Storage &amp; Non-Exposure
+        </span>
+      </div>
+      <div class="card-body">
+        <p class="mb-0"
+           data-en="Google OAuth refresh tokens and access tokens are encrypted on the backend server using Fernet authenticated encryption (AES-128-CBC + HMAC-SHA256) before being saved in an isolated server-only PostgreSQL table locked from browser access. Tokens, client secrets, and encryption keys are never sent to browser JavaScript or stored in localStorage."
+           data-hi="Google OAuth रिफ्रेश और एक्सेस टोकन को सर्वर पर Fernet एन्क्रिप्शन द्वारा एन्क्रिप्ट करके ब्राउज़र-पहुंच-रहित सर्वर-ओनली डेटाबेस तालिका में सहेजा जाता है। टोकन, क्लाइंट सीक्रेट और एन्क्रिप्शन कुंजियाँ कभी भी ब्राउज़र JavaScript या localStorage में नहीं भेजी जातीं।">
+          Google OAuth refresh tokens and access tokens are encrypted on the backend server using Fernet authenticated encryption (AES-128-CBC + HMAC-SHA256) before being saved in an isolated server-only PostgreSQL table locked from browser access. Tokens, client secrets, and encryption keys are never sent to browser JavaScript or stored in <code>localStorage</code>.
+        </p>
+      </div>
+    </div>
+
+    <div class="panchang-card mb-4">
+      <div class="card-header">
+        <i class="fas fa-user-times me-2"></i>
+        <span data-en="4. Disconnecting, Removing Events & Account Deletion" data-hi="4. डिस्कनेक्ट करना, इवेंट्स हटाना और खाता हटाना">
+          4. Disconnecting, Removing Events &amp; Account Deletion
+        </span>
+      </div>
+      <div class="card-body">
+        <ul class="mb-0">
+          <li class="mb-2"
+              data-en="You can click 'Disconnect Google Calendar' at any time in My Account (both Free and Plus tiers, including after a trial expires). Tithi revokes its OAuth token with Google and deletes encrypted credentials immediately."
+              data-hi="आप 'मेरा खाता' में कभी भी 'Google कैलेंडर डिस्कनेक्ट करें' पर क्लिक कर सकते हैं। तिथि तुरंत Google के साथ टोकन रद्द करता है और एन्क्रिप्टेड क्रेडेंशियल हटा देता है।">
+            You can click <strong>Disconnect Google Calendar</strong> at any time in <em>My Account</em> (both Free and Plus tiers, including after a trial expires). Tithi revokes its OAuth token with Google and deletes encrypted credentials immediately.
+          </li>
+          <li class="mb-2"
+              data-en="Tithi tags only the calendar events it creates and verifies both database ownership and Tithi's private event markers before deleting any event. Personal Google Calendar events are never touched."
+              data-hi="तिथि केवल उन्हीं इवेंट्स को हटाता है जिन्हें उसने बनाया है और डेटाबेस व निजी मार्कर द्वारा सत्यापित किया है। आपके अन्य व्यक्तिगत इवेंट्स कभी प्रभावित नहीं होते।">
+            Tithi tags only the calendar events it creates and verifies both database ownership and Tithi's private event markers before deleting any event. Personal Google Calendar events are never touched.
+          </li>
+          <li data-en="Deleting your Tithi account permanently removes all saved profiles, calculation history, entitlements, and OAuth connections, while leaving external Google Calendar events untouched unless you explicitly delete them first."
+              data-hi="आपका तिथि खाता हटाने से सभी सहेजी गई प्रोफ़ाइल, गणना इतिहास, सदस्यता विवरण और OAuth कनेक्शन स्थायी रूप से हट जाते हैं; बाहरी Google कैलेंडर इवेंट्स तब तक सुरक्षित रहते हैं जब तक आप उन्हें स्वयं न हटाएं।">
+            Deleting your Tithi account permanently removes all saved profiles, calculation history, entitlements, and OAuth connections, while leaving external Google Calendar events untouched unless you explicitly delete them first.
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <a href="/account" class="btn btn-saffron me-2">
+        <i class="fas fa-id-card me-1"></i>
+        <span data-en="Back to My Account" data-hi="मेरे खाते पर वापस जाएं">Back to My Account</span>
+      </a>
+      <a href="/" class="btn btn-outline-secondary">
+        <i class="fas fa-calculator me-1"></i>
+        <span data-en="Back to Calculator" data-hi="कैलकुलेटर पर वापस जाएं">Back to Calculator</span>
+      </a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

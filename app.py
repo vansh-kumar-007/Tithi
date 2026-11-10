@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 from datetime import date, datetime
 from typing import Any, Dict, Optional
+from urllib.parse import urlencode
 
 import pytz
 from flask import (
@@ -23,9 +24,32 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 
 from calculations.astronomy import init_ephemeris, set_ayanamsha
 from calculations.birthday_dates import OBSERVANCE_LABELS
-from config import Config, ProductionConfig, validate_production_config
+from config import Config, ProductionConfig, get_google_diagnostic, validate_production_config
 from models.calculation import CalculationRequest
+from services.entitlement_service import (
+    EntitlementError,
+    activate_plus_trial,
+    assert_can_create_birth_profile,
+    get_user_entitlement,
+)
 from services.export_service import export_csv, export_excel, export_ics, export_pdf
+from services.google_oauth_service import (
+    GoogleConfigError,
+    GoogleOAuthError,
+    GoogleReauthError,
+    complete_google_oauth_callback,
+    disconnect_google_connection,
+    get_active_connection,
+    get_latest_connection,
+    revoke_all_user_google_tokens_before_account_delete,
+    start_google_oauth_flow,
+)
+from services.google_sync_service import (
+    GoogleApiError,
+    delete_tithi_calendar_events,
+    execute_google_sync_batch,
+    preview_google_sync,
+)
 from services.location_service import geocode_location
 from services.panchang_service import (
     ADHIKA_RULES,
@@ -36,10 +60,13 @@ from services.panchang_service import (
     calculate_panchang,
 )
 from services.supabase_service import (
+    SupabaseAdminClient,
     SupabaseAuthError,
     SupabaseConfigError,
+    SupabaseConstraintError,
     SupabaseServiceError,
     delete_supabase_user_account,
+    verify_user_jwt,
 )
 from services.timezone_service import get_timezone_str, localize_datetime
 
@@ -72,10 +99,15 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
     @app.context_processor
     def inject_public_supabase_config():
-        """Expose only public Supabase URL & anon key to Jinja2 templates."""
+        """Expose only public Supabase URL & anon key to Jinja2 templates (never secrets)."""
         url = app.config.get("SUPABASE_URL", "")
         anon_key = app.config.get("SUPABASE_ANON_KEY", "")
         service_key = app.config.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        g_configured = bool(
+            app.config.get("GOOGLE_CLIENT_ID")
+            and app.config.get("GOOGLE_CLIENT_SECRET")
+            and app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY")
+        )
         return {
             "SUPABASE_URL": url,
             "SUPABASE_ANON_KEY": anon_key,
@@ -83,7 +115,52 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             "supabase_anon_key": anon_key,
             "supabase_configured": bool(url and anon_key),
             "supabase_account_deletion_enabled": bool(url and service_key),
+            "google_calendar_configured": g_configured,
         }
+
+    def _extract_bearer_token() -> str:
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            raise SupabaseAuthError("Authentication required. Missing Bearer token.")
+        token = auth_header[7:].strip()
+        if not token:
+            raise SupabaseAuthError("Authentication required. Empty Bearer token.")
+        return token
+
+    def _authenticate_user():
+        token = _extract_bearer_token()
+        url = app.config.get("SUPABASE_URL", "")
+        api_key = app.config.get("SUPABASE_ANON_KEY", "") or app.config.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        user = verify_user_jwt(access_token=token, supabase_url=url, api_key=api_key)
+        return str(user["id"]), user, token
+
+    def _get_admin_client() -> SupabaseAdminClient:
+        return SupabaseAdminClient(
+            supabase_url=app.config.get("SUPABASE_URL", ""),
+            service_role_key=app.config.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+        )
+
+    def _google_redirect_uri() -> str:
+        configured = str(app.config.get("GOOGLE_REDIRECT_URI") or "").strip()
+        if configured:
+            return configured
+        return url_for("google_oauth_callback", _external=True)
+
+    def _cached_calculate_for_sync(**kwargs) -> FullResult:
+        cache_key = (
+            f"sync_calc:{kwargs.get('birth_date')}:{kwargs.get('birth_time_mode')}:"
+            f"{kwargs.get('birth_time_local')}:{kwargs.get('birth_time_start')}:{kwargs.get('birth_time_end')}:"
+            f"{float(kwargs.get('lat', 0)):.5f}:{float(kwargs.get('lon', 0)):.5f}:"
+            f"{kwargs.get('timezone_str')}:{kwargs.get('ayanamsha_key')}:{kwargs.get('lunar_system')}:"
+            f"{kwargs.get('observance_method')}:{kwargs.get('adhika_rule')}:"
+            f"{kwargs.get('start_year')}:{kwargs.get('end_year')}"
+        )
+        cached = cache.get(cache_key)
+        if cached is not None:
+            return cached
+        res = calculate_panchang(**kwargs)
+        cache.set(cache_key, res)
+        return res
 
     # ------------------------------------------------------------------ #
     # Request parsing & validation
@@ -448,8 +525,13 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
 
     @app.route("/account")
     def account():
-        """Render the My Account dashboard (session & RLS handled client-side)."""
+        """Render the My Account dashboard."""
         return render_template("account.html")
+
+    @app.route("/privacy")
+    def privacy():
+        """Render Privacy Policy & Google Calendar Permissions explanation."""
+        return render_template("privacy.html")
 
     @app.route("/api/supabase-status")
     def supabase_status():
@@ -462,6 +544,55 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
             "supabase_configured": bool(url and anon_key),
         })
 
+    @app.route("/api/google-status")
+    def google_status_diag():
+        """Safe diagnostic endpoint returning booleans only for Google config."""
+        return jsonify({
+            "google_client_id_loaded": bool(app.config.get("GOOGLE_CLIENT_ID")),
+            "google_client_secret_loaded": bool(app.config.get("GOOGLE_CLIENT_SECRET")),
+            "google_redirect_uri_loaded": bool(app.config.get("GOOGLE_REDIRECT_URI")),
+            "google_encryption_key_loaded": bool(app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY")),
+            "google_calendar_configured": bool(
+                app.config.get("GOOGLE_CLIENT_ID")
+                and app.config.get("GOOGLE_CLIENT_SECRET")
+                and app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY")
+            ),
+        })
+
+    def _api_error_response(exc: Exception):
+        if isinstance(exc, SupabaseAuthError):
+            return jsonify({"error": str(exc), "code": "AUTH_ERROR"}), 401
+        if isinstance(exc, EntitlementError):
+            body = {"error": exc.message, "code": exc.code}
+            body.update(exc.extra)
+            return jsonify(body), exc.status_code
+        if isinstance(exc, GoogleReauthError):
+            return jsonify({"error": exc.message, "code": exc.code, "reauth_required": True}), 401
+        if isinstance(exc, GoogleOAuthError):
+            return jsonify({"error": exc.message, "code": exc.code}), exc.status_code
+        if isinstance(exc, GoogleConfigError):
+            return jsonify({"error": str(exc), "code": "GOOGLE_NOT_CONFIGURED"}), 503
+        if isinstance(exc, SupabaseConfigError):
+            return jsonify({"error": str(exc), "code": "SUPABASE_NOT_CONFIGURED"}), 503
+        if isinstance(exc, SupabaseConstraintError):
+            msg = str(exc)
+            if "FREE_PROFILE_LIMIT_REACHED" in msg:
+                return jsonify({
+                    "error": "Free accounts can save up to 3 birth profiles. Start your 14-day free trial or upgrade to Tithi Plus.",
+                    "code": "PROFILE_LIMIT_REACHED",
+                    "limit": 3,
+                    "upgrade_required": True,
+                }), 403
+            return jsonify({"error": msg, "code": "CONSTRAINT_ERROR"}), 409
+        if isinstance(exc, GoogleApiError):
+            return jsonify({"error": exc.message, "code": "GOOGLE_API_ERROR", "reason": exc.reason}), exc.status_code
+        if isinstance(exc, SupabaseServiceError):
+            return jsonify({"error": str(exc), "code": "SUPABASE_SERVICE_ERROR"}), 502
+        if isinstance(exc, (ValueError, TypeError)):
+            return jsonify({"error": str(exc), "code": "VALIDATION_ERROR"}), 400
+        app.logger.exception("Unexpected API error")
+        return jsonify({"error": "An unexpected server error occurred."}), 500
+
     @app.route("/api/validate-input", methods=["POST"])
     def validate_historical_input():
         """Validate saved historical calculation input payload before export/recalculation."""
@@ -472,12 +603,387 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         except (ValueError, TypeError) as exc:
             return jsonify({"valid": False, "error": str(exc)}), 400
 
+    # ------------------------------------------------------------------ #
+    # Entitlements & Trial Routes
+    # ------------------------------------------------------------------ #
+
+    @app.route("/api/entitlements", methods=["GET"])
+    def get_entitlements():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            return jsonify(get_user_entitlement(admin, user_id, include_counts=True))
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/api/entitlements/start-trial", methods=["POST"])
+    def start_plus_trial_route():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            entitlement = activate_plus_trial(admin, user_id)
+            return jsonify({"activated": True, "entitlement": entitlement})
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    # ------------------------------------------------------------------ #
+    # Server-Validated Saved Birth Profiles (Enforces Free 3-Profile Limit)
+    # ------------------------------------------------------------------ #
+
+    @app.route("/api/profiles", methods=["GET", "POST"])
+    def profiles_collection():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+
+            if request.method == "GET":
+                profiles = admin.select(
+                    "saved_birth_profiles",
+                    filters={"user_id": f"eq.{user_id}"},
+                    order="updated_at.desc",
+                )
+                active_conn = get_active_connection(admin, user_id)
+                synced_counts: Dict[str, int] = {}
+                if active_conn:
+                    events = admin.select(
+                        "google_calendar_events",
+                        filters={
+                            "user_id": f"eq.{user_id}",
+                            "google_connection_id": f"eq.{active_conn['id']}",
+                            "sync_status": "eq.synced",
+                        },
+                        columns="saved_birth_profile_id",
+                    )
+                    for ev in events:
+                        pid = ev.get("saved_birth_profile_id")
+                        if pid:
+                            k = str(pid)
+                            synced_counts[k] = synced_counts.get(k, 0) + 1
+                entitlement = get_user_entitlement(admin, user_id, include_counts=True)
+                return jsonify({
+                    "profiles": profiles,
+                    "synced_counts_by_profile": synced_counts,
+                    "entitlement": entitlement,
+                })
+
+            data = request.get_json(silent=True) or {}
+            label = str(data.get("label") or "").strip()
+            if not label or len(label) > 80:
+                raise ValueError("Please enter a profile label (1-80 characters).")
+
+            assert_can_create_birth_profile(admin, user_id)
+            req_model = _parse_calculation_request(data)
+
+            row = {
+                "user_id": user_id,
+                "label": label,
+                "birth_date": req_model.birth_date.isoformat(),
+                "birth_time_mode": req_model.birth_time_mode,
+                "birth_time": req_model.birth_time_local.strftime("%H:%M") if req_model.birth_time_local else None,
+                "birth_time_start": req_model.birth_time_start.strftime("%H:%M") if req_model.birth_time_start else None,
+                "birth_time_end": req_model.birth_time_end.strftime("%H:%M") if req_model.birth_time_end else None,
+                "location_name": req_model.location_name,
+                "latitude": req_model.lat,
+                "longitude": req_model.lon,
+                "timezone": req_model.timezone_str,
+                "ayanamsha": req_model.ayanamsha_key,
+                "lunar_system": req_model.lunar_system,
+                "observance_method": req_model.observance_method,
+                "adhika_rule": req_model.adhika_rule,
+                "start_year": req_model.start_year,
+                "end_year": req_model.end_year,
+            }
+            inserted = admin.insert("saved_birth_profiles", row)
+            if not inserted:
+                raise SupabaseServiceError("Profile creation did not return the saved record.")
+            return jsonify({"profile": inserted[0]}), 201
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/api/profiles/<profile_id>", methods=["DELETE"])
+    def delete_saved_profile_route(profile_id: str):
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            body = request.get_json(silent=True) or {}
+            delete_cal_events = bool(body.get("delete_calendar_events", False))
+
+            existing = admin.select(
+                "saved_birth_profiles",
+                filters={"id": f"eq.{profile_id}", "user_id": f"eq.{user_id}"},
+                limit=1,
+            )
+            if not existing:
+                return jsonify({"error": "Saved birth profile not found."}), 404
+
+            deleted_cal = {"deleted_count": 0, "failed_count": 0}
+            if delete_cal_events:
+                deleted_cal = delete_tithi_calendar_events(
+                    admin=admin,
+                    user_id=user_id,
+                    client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                    client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+                    encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                    scope="profile",
+                    profile_id=profile_id,
+                )
+
+            admin.delete(
+                "saved_birth_profiles",
+                filters={"id": f"eq.{profile_id}", "user_id": f"eq.{user_id}"},
+            )
+            return jsonify({
+                "deleted": True,
+                "deleted_calendar_events": int(deleted_cal.get("deleted_count", 0)),
+            })
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    # ------------------------------------------------------------------ #
+    # Google OAuth 2.0 & Calendar Synchronization Routes
+    # ------------------------------------------------------------------ #
+
+    @app.route("/api/google/status", methods=["GET"])
+    def google_connection_status():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+
+            entitlement = get_user_entitlement(admin, user_id, include_counts=True)
+            conn = get_latest_connection(admin, user_id)
+            events = []
+            if conn:
+                events = admin.select(
+                    "google_calendar_events",
+                    filters={
+                        "user_id": f"eq.{user_id}",
+                        "google_connection_id": f"eq.{conn['id']}",
+                        "sync_status": "neq.deleted",
+                    },
+                    columns="id,saved_birth_profile_id,profile_label_snapshot,google_calendar_id,hindu_year,candidate_index,gregorian_date,lunar_month_en,tithi_label,observance_status,sync_status,last_error,last_synced_at",
+                    order="hindu_year.asc,profile_label_snapshot.asc",
+                )
+            logs = admin.select(
+                "google_sync_logs",
+                filters={"user_id": f"eq.{user_id}"},
+                order="created_at.desc",
+                limit=15,
+            )
+
+            safe_conn = None
+            if conn:
+                safe_conn = {
+                    "id": conn.get("id"),
+                    "google_email": conn.get("google_email"),
+                    "calendar_id": conn.get("calendar_id", "primary"),
+                    "status": conn.get("status"),
+                    "connected_at": conn.get("connected_at"),
+                    "disconnected_at": conn.get("disconnected_at"),
+                    "last_synced_at": conn.get("last_synced_at"),
+                    "last_sync_status": conn.get("last_sync_status"),
+                    "last_sync_error": conn.get("last_sync_error"),
+                }
+
+            return jsonify({
+                "google_calendar_configured": bool(
+                    app.config.get("GOOGLE_CLIENT_ID")
+                    and app.config.get("GOOGLE_CLIENT_SECRET")
+                    and app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY")
+                ),
+                "connection": safe_conn,
+                "entitlement": entitlement,
+                "events": events,
+                "sync_logs": logs,
+            })
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/api/google/oauth/start", methods=["POST"])
+    def google_oauth_start():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            result = start_google_oauth_flow(
+                admin=admin,
+                user_id=user_id,
+                client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                redirect_uri=_google_redirect_uri(),
+                encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+            )
+            resp = jsonify({"auth_url": result["auth_url"]})
+            resp.set_cookie(
+                "tithi_google_oauth_nonce",
+                result["browser_nonce"],
+                max_age=600,
+                httponly=True,
+                samesite="Lax",
+                secure=not bool(app.config.get("DEBUG")),
+                path="/auth/google/callback",
+            )
+            return resp
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/auth/google/callback", methods=["GET"])
+    def google_oauth_callback():
+        raw_state = request.args.get("state", "")
+        code = request.args.get("code", "")
+        error_param = request.args.get("error", "")
+        browser_nonce = request.cookies.get("tithi_google_oauth_nonce", "")
+
+        try:
+            admin = _get_admin_client()
+            complete_google_oauth_callback(
+                admin=admin,
+                raw_state=raw_state,
+                browser_nonce=browser_nonce,
+                code=code,
+                error_param=error_param,
+                client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+                redirect_uri=_google_redirect_uri(),
+                encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+            )
+            target = url_for("account") + "?google_connected=1#google-calendar-sync"
+        except (GoogleOAuthError, GoogleConfigError) as exc:
+            code_param = exc.code if isinstance(exc, GoogleOAuthError) else "GOOGLE_NOT_CONFIGURED"
+            qs = urlencode({"google_error": code_param, "google_error_msg": str(exc)[:180]})
+            target = url_for("account") + f"?{qs}#google-calendar-sync"
+        except Exception:
+            app.logger.exception("Unexpected error during Google OAuth callback")
+            qs = urlencode({"google_error": "OAUTH_CALLBACK_FAILED", "google_error_msg": "Unable to complete Google Calendar connection."})
+            target = url_for("account") + f"?{qs}#google-calendar-sync"
+
+        resp = redirect(target)
+        resp.delete_cookie("tithi_google_oauth_nonce", path="/auth/google/callback")
+        return resp
+
+    @app.route("/api/google/disconnect", methods=["POST"])
+    def google_disconnect_route():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            body = request.get_json(silent=True) or {}
+            delete_events = bool(body.get("delete_events", False))
+
+            def _delete_all_for_conn(conn_id: str) -> Dict[str, Any]:
+                return delete_tithi_calendar_events(
+                    admin=admin,
+                    user_id=user_id,
+                    client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                    client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+                    encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                    scope="all",
+                    connection_id_filter=conn_id,
+                )
+
+            out = disconnect_google_connection(
+                admin=admin,
+                user_id=user_id,
+                encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                delete_events_first=delete_events,
+                delete_events_callback=_delete_all_for_conn if delete_events else None,
+            )
+            return jsonify(out)
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    def _parse_int_opt(val: Any) -> Optional[int]:
+        if val in (None, ""):
+            return None
+        return int(val)
+
+    @app.route("/api/google/sync/preview", methods=["POST"])
+    def google_sync_preview_route():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            data = request.get_json(silent=True) or {}
+            profile_ids = data.get("profile_ids") or []
+            if not isinstance(profile_ids, list):
+                raise ValueError("profile_ids must be a list.")
+
+            res = preview_google_sync(
+                admin=admin,
+                user_id=user_id,
+                profile_ids=[str(x) for x in profile_ids],
+                sync_mode=str(data.get("sync_mode") or "upcoming_12m"),
+                years_ahead=_parse_int_opt(data.get("years_ahead")),
+                specific_year=_parse_int_opt(data.get("specific_year")),
+                start_year=_parse_int_opt(data.get("start_year")),
+                end_year=_parse_int_opt(data.get("end_year")),
+                candidate_selections={
+                    str(k): int(v) for k, v in (data.get("candidate_selections") or {}).items()
+                },
+                calculate_fn=_cached_calculate_for_sync,
+            )
+            return jsonify(res)
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/api/google/sync/execute", methods=["POST"])
+    def google_sync_execute_route():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            data = request.get_json(silent=True) or {}
+            profile_ids = data.get("profile_ids") or []
+            if not isinstance(profile_ids, list):
+                raise ValueError("profile_ids must be a list.")
+
+            res = execute_google_sync_batch(
+                admin=admin,
+                user_id=user_id,
+                client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+                encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                profile_ids=[str(x) for x in profile_ids],
+                sync_mode=str(data.get("sync_mode") or "upcoming_12m"),
+                years_ahead=_parse_int_opt(data.get("years_ahead")),
+                specific_year=_parse_int_opt(data.get("specific_year")),
+                start_year=_parse_int_opt(data.get("start_year")),
+                end_year=_parse_int_opt(data.get("end_year")),
+                candidate_selections={
+                    str(k): int(v) for k, v in (data.get("candidate_selections") or {}).items()
+                },
+                offset=int(data.get("offset") or 0),
+                limit=int(data.get("limit") or 20),
+                accumulated=data.get("accumulated") if isinstance(data.get("accumulated"), dict) else None,
+                calculate_fn=_cached_calculate_for_sync,
+            )
+            return jsonify(res)
+        except Exception as exc:
+            return _api_error_response(exc)
+
+    @app.route("/api/google/events/delete", methods=["POST"])
+    def google_delete_events_route():
+        try:
+            user_id, _, _ = _authenticate_user()
+            admin = _get_admin_client()
+            data = request.get_json(silent=True) or {}
+            res = delete_tithi_calendar_events(
+                admin=admin,
+                user_id=user_id,
+                client_id=app.config.get("GOOGLE_CLIENT_ID", ""),
+                client_secret=app.config.get("GOOGLE_CLIENT_SECRET", ""),
+                encryption_key=app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", ""),
+                scope=str(data.get("scope") or "single"),
+                event_record_id=data.get("event_record_id"),
+                profile_id=data.get("profile_id"),
+                year_start=_parse_int_opt(data.get("year_start")),
+                year_end=_parse_int_opt(data.get("year_end")),
+            )
+            return jsonify(res)
+        except Exception as exc:
+            return _api_error_response(exc)
+
     @app.route("/api/account/delete", methods=["POST"])
     def delete_account():
         """
         Permanently delete the authenticated user's Supabase Auth account
-        (cascading to saved_birth_profiles and calculation_history).
-        Requires a valid Supabase Bearer JWT and explicit confirmation.
+        (cascading to all Tithi database tables) and revoke Google OAuth tokens
+        when configured without deleting external Google Calendar events.
         """
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
@@ -490,17 +996,31 @@ def create_app(config_override: Optional[Dict[str, Any]] = None) -> Flask:
         if str(body.get("confirm_text", "")).strip().upper() != "DELETE":
             return jsonify({"error": "Please type DELETE to confirm permanent account deletion."}), 400
 
+        supabase_url = app.config.get("SUPABASE_URL", "")
+        service_role_key = app.config.get("SUPABASE_SERVICE_ROLE_KEY", "")
+        encryption_key = app.config.get("GOOGLE_TOKEN_ENCRYPTION_KEY", "")
+
+        def _cleanup_before_delete(verified_uid: str) -> None:
+            if encryption_key:
+                revoke_all_user_google_tokens_before_account_delete(
+                    supabase_url=supabase_url,
+                    service_role_key=service_role_key,
+                    encryption_key=encryption_key,
+                    user_id=verified_uid,
+                )
+
         try:
             deleted = delete_supabase_user_account(
                 access_token=token,
-                supabase_url=app.config.get("SUPABASE_URL", ""),
+                supabase_url=supabase_url,
                 anon_key=app.config.get("SUPABASE_ANON_KEY", ""),
-                service_role_key=app.config.get("SUPABASE_SERVICE_ROLE_KEY", ""),
+                service_role_key=service_role_key,
+                before_delete=_cleanup_before_delete,
             )
             return jsonify({
                 "deleted": True,
                 "email": deleted.get("email"),
-                "message": "Your account, saved birth profiles, and calculation history have been permanently deleted.",
+                "message": "Your account, saved birth profiles, calculation history, and Tithi Google connection records have been permanently deleted.",
             })
         except SupabaseAuthError as exc:
             return jsonify({"error": str(exc)}), 401

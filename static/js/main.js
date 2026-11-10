@@ -143,6 +143,9 @@ function setLang(lang) {
   if (lastResult) {
     renderResults(lastResult);
   }
+  if (window.TithiAuth && typeof window.TithiAuth.onLanguageChange === 'function') {
+    window.TithiAuth.onLanguageChange(lang);
+  }
 }
 
 // ══════════════════════════════════════════════════════

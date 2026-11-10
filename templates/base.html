@@ -192,9 +192,16 @@
     <p class="mb-1">
       <strong data-en="Hindu Tithi Birthday Calculator" data-hi="हिंदू तिथि जन्मदिन कैलकुलेटर">Hindu Tithi Birthday Calculator</strong>
     </p>
-    <p class="text-muted small" style="color: rgba(255,255,255,0.65) !important;">
+    <p class="text-muted small mb-2" style="color: rgba(255,255,255,0.65) !important;">
       Calculations powered by Swiss Ephemeris (pyswisseph) with configurable ayanamsha and Panchang conventions.
       <br/>For important religious occasions, please verify with a qualified Jyotish practitioner.
+    </p>
+    <p class="small mb-0">
+      <a href="/privacy" class="text-light text-decoration-underline opacity-75"
+         data-en="Privacy Policy & Google Calendar Permissions"
+         data-hi="गोपनीयता नीति और Google कैलेंडर अनुमतियाँ">
+        Privacy Policy &amp; Google Calendar Permissions
+      </a>
     </p>
   </div>
 </footer>
@@ -204,7 +211,8 @@
     url: {{ supabase_url | tojson }},
     anonKey: {{ supabase_anon_key | tojson }},
     configured: {{ supabase_configured | tojson }},
-    accountDeletionEnabled: {{ supabase_account_deletion_enabled | tojson }}
+    accountDeletionEnabled: {{ supabase_account_deletion_enabled | tojson }},
+    googleCalendarConfigured: {{ google_calendar_configured | tojson }}
   };
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>

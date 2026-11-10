@@ -48,6 +48,12 @@ SUPABASE_ANON_KEY = (
 )
 SUPABASE_SERVICE_ROLE_KEY = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
 
+# Google Calendar OAuth 2.0 & Token Encryption (strictly server-side secrets)
+GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "").strip()
+GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "").strip()
+GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "").strip()
+GOOGLE_TOKEN_ENCRYPTION_KEY = os.environ.get("GOOGLE_TOKEN_ENCRYPTION_KEY", "").strip()
+
 
 def get_supabase_diagnostic() -> Dict[str, object]:
     """
@@ -61,6 +67,19 @@ def get_supabase_diagnostic() -> Dict[str, object]:
         "supabase_anon_key_loaded": bool(SUPABASE_ANON_KEY),
         "supabase_service_role_key_loaded": bool(SUPABASE_SERVICE_ROLE_KEY),
         "supabase_configured": bool(SUPABASE_URL and SUPABASE_ANON_KEY),
+    }
+
+
+def get_google_diagnostic() -> Dict[str, bool]:
+    """Return safe boolean diagnostics for Google Calendar OAuth & encryption config."""
+    return {
+        "google_client_id_loaded": bool(GOOGLE_CLIENT_ID),
+        "google_client_secret_loaded": bool(GOOGLE_CLIENT_SECRET),
+        "google_redirect_uri_loaded": bool(GOOGLE_REDIRECT_URI),
+        "google_encryption_key_loaded": bool(GOOGLE_TOKEN_ENCRYPTION_KEY),
+        "google_calendar_configured": bool(
+            GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET and GOOGLE_TOKEN_ENCRYPTION_KEY
+        ),
     }
 
 
@@ -96,6 +115,11 @@ class Config:
     SUPABASE_URL = SUPABASE_URL
     SUPABASE_ANON_KEY = SUPABASE_ANON_KEY
     SUPABASE_SERVICE_ROLE_KEY = SUPABASE_SERVICE_ROLE_KEY
+
+    GOOGLE_CLIENT_ID = GOOGLE_CLIENT_ID
+    GOOGLE_CLIENT_SECRET = GOOGLE_CLIENT_SECRET
+    GOOGLE_REDIRECT_URI = GOOGLE_REDIRECT_URI
+    GOOGLE_TOKEN_ENCRYPTION_KEY = GOOGLE_TOKEN_ENCRYPTION_KEY
 
 
 class ProductionConfig(Config):

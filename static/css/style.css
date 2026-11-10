@@ -631,6 +631,34 @@ main { flex: 1; }
   transform: translateY(-2px);
 }
 .text-navy { color: var(--navy) !important; }
+.plan-badge-free {
+  background: rgba(255,255,255,0.2);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.35);
+}
+.plan-badge-trial {
+  background: var(--saffron);
+  color: #fff;
+}
+.plan-badge-plus {
+  background: #198754;
+  color: #fff;
+}
+.plan-banner {
+  border: 1px solid #DEE2E6;
+}
+.plan-banner-promo {
+  background: linear-gradient(135deg, rgba(255,140,0,0.08), rgba(27,42,74,0.04));
+  border-color: rgba(255,140,0,0.35);
+}
+.plan-banner-trial {
+  background: rgba(25,135,84,0.08);
+  border-color: rgba(25,135,84,0.3);
+}
+.plan-banner-expired {
+  background: rgba(220,53,69,0.06);
+  border-color: rgba(220,53,69,0.3);
+}
 
 @media (max-width: 768px) {
   .hero-section { padding: 2rem 0 3rem; }

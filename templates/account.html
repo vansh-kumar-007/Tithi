@@ -6,9 +6,9 @@
   <div class="container">
     <h1 class="results-title" data-en="My Account" data-hi="मेरा खाता">My Account</h1>
     <p class="results-subtitle"
-       data-en="Manage your saved family birth profiles, revisit calculation history, and control your account data."
-       data-hi="अपनी सहेजी गई जन्म प्रोफ़ाइल, गणना इतिहास और खाते के डेटा को प्रबंधित करें।">
-      Manage your saved family birth profiles, revisit calculation history, and control your account data.
+       data-en="Manage your saved family birth profiles, Tithi Plus plan, Google Calendar synchronization, and calculation history."
+       data-hi="अपनी सहेजी गई जन्म प्रोफ़ाइल, तिथि प्लस प्लान, Google कैलेंडर सिंक्रोनाइज़ेशन और गणना इतिहास प्रबंधित करें।">
+      Manage your saved family birth profiles, Tithi Plus plan, Google Calendar synchronization, and calculation history.
     </p>
   </div>
 </section>
@@ -40,9 +40,9 @@
       <div class="fs-1 mb-2">🔐</div>
       <h4 data-en="Sign In to View Your Saved Birthdays" data-hi="अपनी सहेजी गई जन्म तिथियाँ देखने के लिए लॉग इन करें">Sign In to View Your Saved Birthdays</h4>
       <p class="text-muted mx-auto mb-4" style="max-width: 520px;"
-         data-en="Create an account or log in to save family birth profiles and revisit past Hindu calendar calculations. The calculator remains free to use without logging in."
-         data-hi="परिवार की जन्म प्रोफ़ाइल सहेजने और पिछले पंचांग परिणाम देखने के लिए लॉग इन करें। कैलकुलेटर बिना लॉग इन के भी उपयोग किया जा सकता है।">
-        Create an account or log in to save family birth profiles and revisit past Hindu calendar calculations. The calculator remains free to use without logging in.
+         data-en="Create an account or log in to save family birth profiles, synchronize Google Calendar reminders, and revisit past Hindu calendar calculations. The calculator remains free to use without logging in."
+         data-hi="परिवार की जन्म प्रोफ़ाइल सहेजने, Google कैलेंडर अनुस्मारक सिंक करने और पिछले पंचांग परिणाम देखने के लिए लॉग इन करें। कैलकुलेटर बिना लॉग इन के भी उपयोग किया जा सकता है।">
+        Create an account or log in to save family birth profiles, synchronize Google Calendar reminders, and revisit past Hindu calendar calculations. The calculator remains free to use without logging in.
       </p>
       <div class="d-flex justify-content-center gap-2 flex-wrap">
         <button type="button" class="btn btn-saffron px-4"
@@ -67,9 +67,9 @@
       <!-- Account Overview -->
       <div class="panchang-card mb-4">
         <div class="card-header justify-content-between flex-wrap gap-2">
-          <div>
-            <i class="fas fa-user-shield me-2"></i>
-            <span data-en="Account Overview" data-hi="खाता विवरण">Account Overview</span>
+          <div class="d-flex align-items-center flex-wrap gap-2">
+            <span><i class="fas fa-user-shield me-2"></i><span data-en="Account Overview" data-hi="खाता विवरण">Account Overview</span></span>
+            <span id="account-plan-badge" class="badge rounded-pill plan-badge-free">FREE</span>
           </div>
           <a href="/#calculator" class="btn btn-sm btn-saffron">
             <i class="fas fa-plus me-1"></i>
@@ -78,25 +78,84 @@
         </div>
         <div class="card-body">
           <div class="row g-3 align-items-center">
-            <div class="col-md-5">
+            <div class="col-md-4">
               <div class="panchang-item">
                 <div class="panchang-label" data-en="Signed In Email" data-hi="लॉग-इन ईमेल">Signed In Email</div>
                 <div class="panchang-value text-break" id="account-email">—</div>
               </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
               <div class="panchang-item">
                 <div class="panchang-label" data-en="Account Created" data-hi="खाता निर्माण तिथि">Account Created</div>
                 <div class="panchang-value" id="account-created">—</div>
               </div>
             </div>
-            <div class="col-md-3">
+            <div class="col-md-2">
               <div class="panchang-item">
-                <div class="panchang-label" data-en="Saved Profiles / History" data-hi="प्रोफ़ाइल / इतिहास">Saved Profiles / History</div>
+                <div class="panchang-label" data-en="Profiles / History" data-hi="प्रोफ़ाइल / इतिहास">Profiles / History</div>
                 <div class="panchang-value" id="account-counts">0 / 0</div>
               </div>
             </div>
+            <div class="col-md-3">
+              <div class="panchang-item">
+                <div class="panchang-label" data-en="Trial / Plan Status" data-hi="ट्रायल / प्लान स्थिति">Trial / Plan Status</div>
+                <div class="panchang-value small" id="account-trial-summary">—</div>
+              </div>
+            </div>
           </div>
+
+          <!-- Dynamic Plan / Trial / Upgrade Banner -->
+          <div id="plan-entitlement-host" class="mt-3"></div>
+        </div>
+      </div>
+
+      <!-- Google Calendar Sync Section -->
+      <div class="panchang-card mb-4" id="google-calendar-sync">
+        <div class="card-header justify-content-between flex-wrap gap-2">
+          <div>
+            <i class="fab fa-google me-2"></i>
+            <span data-en="Google Calendar Sync" data-hi="Google कैलेंडर सिंक">Google Calendar Sync</span>
+          </div>
+          <button type="button" class="btn btn-sm btn-outline-light" id="btn-refresh-google-sync"
+                  onclick="window.TithiAuth && window.TithiAuth.refreshGoogleSyncSection()">
+            <i class="fas fa-sync-alt me-1"></i>
+            <span data-en="Refresh Sync Status" data-hi="सिंक स्थिति रिफ्रेश करें">Refresh Sync Status</span>
+          </button>
+        </div>
+        <div class="card-body">
+
+          <!-- Callback notification area -->
+          <div id="google-oauth-flash" class="alert d-none mb-3" role="alert"></div>
+
+          <!-- Permissions & Privacy Explanation -->
+          <div class="alert alert-light border small mb-4">
+            <div class="fw-semibold text-navy mb-1">
+              <i class="fas fa-shield-alt text-saffron me-1"></i>
+              <span data-en="Google Permissions & Privacy" data-hi="Google अनुमतियाँ और गोपनीयता">Google Permissions &amp; Privacy</span>
+            </div>
+            <p class="mb-2 text-muted"
+               data-en="Tithi requests only the minimum calendar events scope (calendar.events) plus your account email (openid, email) to display which Google account is linked. We never access Gmail, Google Drive, Contacts, or unrelated personal events. Hindu birthday descriptions omit sensitive birth time, DOB, and birthplace coordinates, and OAuth tokens are encrypted server-side."
+               data-hi="तिथि केवल न्यूनतम कैलेंडर इवेंट अनुमति (calendar.events) और जुड़े खाते की पहचान के लिए ईमेल (openid, email) मांगता है। हम कभी भी Gmail, Drive, Contacts या आपके अन्य व्यक्तिगत इवेंट्स नहीं पढ़ते। कैलेंडर विवरण में जन्म समय, जन्म तिथि या जन्मस्थान निर्देशांक शामिल नहीं किए जाते, और सभी टोकन सर्वर पर एन्क्रिप्ट रहते हैं।">
+              Tithi requests only the minimum calendar events scope (<code>calendar.events</code>) plus your account email (<code>openid</code>, <code>email</code>) to display which Google account is linked. We never access Gmail, Google Drive, Contacts, or unrelated personal events. Hindu birthday descriptions omit sensitive birth time, DOB, and birthplace coordinates, and OAuth tokens are encrypted server-side.
+            </p>
+            <a href="/privacy" class="small fw-semibold text-decoration-underline"
+               data-en="Read Google Calendar Privacy Policy" data-hi="Google कैलेंडर गोपनीयता नीति पढ़ें">
+              Read Google Calendar Privacy Policy
+            </a>
+          </div>
+
+          <!-- Dynamic Connection Status -->
+          <div id="google-connection-host" class="mb-4"></div>
+
+          <!-- Dynamic Sync Controls (Free vs Plus) -->
+          <div id="google-sync-controls-host" class="mb-4"></div>
+
+          <!-- Managed Tithi-Created Google Calendar Events -->
+          <div id="google-events-host" class="mb-4"></div>
+
+          <!-- Synchronization History Log -->
+          <div id="google-sync-logs-host"></div>
+
         </div>
       </div>
 
@@ -106,6 +165,7 @@
           <div>
             <i class="fas fa-users me-2"></i>
             <span data-en="Saved Birth Profiles" data-hi="सहेजी गई जन्म प्रोफ़ाइल">Saved Birth Profiles</span>
+            <span id="profiles-quota-pill" class="badge bg-light text-dark ms-2">0</span>
           </div>
           <button type="button" class="btn btn-sm btn-outline-light" id="btn-refresh-dashboard"
                   onclick="window.TithiAuth && window.TithiAuth.loadAccountDashboard()">
@@ -114,6 +174,7 @@
           </button>
         </div>
         <div class="card-body">
+          <div id="saved-profiles-limit-alert"></div>
           <div id="saved-profiles-list"></div>
         </div>
       </div>
@@ -137,9 +198,9 @@
         </div>
         <div class="card-body">
           <p class="mb-3 text-muted"
-             data-en="Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account along with all saved birth profiles and calculation history stored in Supabase."
-             data-hi="आपका खाता हटाना स्थायी है और इसे पूर्ववत नहीं किया जा सकता। इससे आपका लॉगिन खाता, सभी सहेजी गई जन्म प्रोफ़ाइल और गणना इतिहास स्थायी रूप से हट जाएंगे।">
-            Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account along with all saved birth profiles and calculation history stored in Supabase.
+             data-en="Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account, saved birth profiles, calculation history, plan records, and revoke Tithi's Google connection. Previously synced Google Calendar events remain in Google Calendar unless you delete them before deleting your account."
+             data-hi="आपका खाता हटाना स्थायी है और इसे पूर्ववत नहीं किया जा सकता। इससे आपका लॉगिन खाता, सभी सहेजी गई जन्म प्रोफ़ाइल, गणना इतिहास, प्लान रिकॉर्ड हट जाएंगे और Google कनेक्शन रद्द हो जाएगा। पहले से सिंक किए गए Google कैलेंडर इवेंट्स तब तक आपके Google कैलेंडर में रहेंगे जब तक आप उन्हें खाता हटाने से पहले स्वयं न हटा दें।">
+            Deleting your account is permanent and cannot be undone. It will immediately and permanently delete your login account, saved birth profiles, calculation history, plan records, and revoke Tithi's Google connection. Previously synced Google Calendar events remain in Google Calendar unless you delete them before deleting your account.
           </p>
           <button type="button" class="btn btn-outline-danger" id="btn-open-delete-account"
                   data-bs-toggle="modal" data-bs-target="#deleteAccountModal">
@@ -152,6 +213,184 @@
     </div>
   </div>
 </section>
+
+<!-- Sync Preview & Bounded Progress Modal -->
+<div class="modal fade" id="googleSyncPreviewModal" tabindex="-1" aria-labelledby="googleSyncPreviewModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="googleSyncPreviewModalLabel">
+          <i class="fas fa-calendar-plus me-2"></i>
+          <span data-en="Synchronization Preview" data-hi="सिंक्रोनाइज़ेशन पूर्वावलोकन">Synchronization Preview</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnPreviewModalClose"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="syncPreviewAlert" class="alert d-none" role="alert"></div>
+        <div id="syncPreviewContent"></div>
+        <div id="syncProgressWrap" class="mt-3 d-none">
+          <div class="d-flex justify-content-between small fw-semibold mb-1">
+            <span id="syncProgressLabel">Synchronizing…</span>
+            <span id="syncProgressPercent">0%</span>
+          </div>
+          <div class="progress" style="height: 12px;">
+            <div class="progress-bar progress-bar-striped progress-bar-animated bg-warning" id="syncProgressBar"
+                 role="progressbar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnCancelSyncPreview"
+                data-en="Close" data-hi="बंद करें">Close</button>
+        <button type="button" class="btn btn-saffron fw-semibold" id="btnConfirmSyncExecute"
+                onclick="window.TithiAuth && window.TithiAuth.executeConfirmedSync()">
+          <i class="fas fa-cloud-upload-alt me-1"></i>
+          <span data-en="Confirm & Sync to Google Calendar" data-hi="पुष्टि करें और Google कैलेंडर में सिंक करें">Confirm &amp; Sync to Google Calendar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Disconnect Google Modal -->
+<div class="modal fade" id="googleDisconnectModal" tabindex="-1" aria-labelledby="googleDisconnectModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="googleDisconnectModalLabel">
+          <i class="fas fa-unlink me-2"></i>
+          <span data-en="Disconnect Google Calendar" data-hi="Google कैलेंडर डिस्कनेक्ट करें">Disconnect Google Calendar</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="googleDisconnectAlert" class="alert d-none" role="alert"></div>
+        <p class="small text-muted"
+           data-en="Disconnecting revokes Tithi's Google Calendar access and immediately deletes all stored encrypted tokens. Previously synchronized events stay in your Google Calendar unless you check the option below."
+           data-hi="डिस्कनेक्ट करने से तिथि की Google कैलेंडर पहुंच रद्द हो जाती है और सभी एन्क्रिप्टेड टोकन तुरंत हटा दिए जाते हैं। पहले से सिंक किए गए इवेंट्स आपके Google कैलेंडर में बने रहते हैं जब तक आप नीचे दिए गए विकल्प को न चुनें।">
+          Disconnecting revokes Tithi's Google Calendar access and immediately deletes all stored encrypted tokens. Previously synchronized events stay in your Google Calendar unless you check the option below.
+        </p>
+        <div class="form-check p-3 rounded border bg-light mb-3">
+          <input class="form-check-input ms-0 me-2" type="checkbox" id="disconnectDeleteEventsCheck" />
+          <label class="form-check-label small fw-semibold" for="disconnectDeleteEventsCheck"
+                 data-en="Also delete all events previously created by Tithi from Google Calendar before disconnecting (unrelated events remain untouched)"
+                 data-hi="डिस्कनेक्ट करने से पहले Google कैलेंडर से केवल तिथि द्वारा बनाए गए सभी इवेंट्स भी हटा दें">
+            Also delete all events previously created by Tithi from Google Calendar before disconnecting (unrelated events remain untouched)
+          </label>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-en="Cancel" data-hi="रद्द करें">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDisconnectGoogle"
+                  onclick="window.TithiAuth && window.TithiAuth.confirmDisconnectGoogle()">
+            <span data-en="Disconnect Google" data-hi="Google डिस्कनेक्ट करें">Disconnect Google</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Tithi Calendar Events Modal -->
+<div class="modal fade" id="deleteCalendarEventsModal" tabindex="-1" aria-labelledby="deleteCalendarEventsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold" id="deleteCalendarEventsModalLabel">
+          <i class="fas fa-calendar-times me-2"></i>
+          <span data-en="Remove Tithi Calendar Events" data-hi="तिथि कैलेंडर इवेंट्स हटाएं">Remove Tithi Calendar Events</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div id="deleteCalEventsAlert" class="alert d-none" role="alert"></div>
+        <p id="deleteCalEventsSummary" class="small text-muted mb-2"></p>
+        <p class="small fw-semibold text-success mb-3"
+           data-en="Safety guarantee: Tithi verifies each tracked event ID and Tithi ownership marker. Unrelated events on your Google Calendar will NEVER be deleted."
+           data-hi="सुरक्षा गारंटी: तिथि प्रत्येक ट्रैक किए गए इवेंट और उसके स्वामित्व मार्कर की पुष्टि करता है। आपके अन्य व्यक्तिगत इवेंट्स कभी नहीं हटाए जाएंगे।">
+          Safety guarantee: Tithi verifies each tracked event ID and Tithi ownership marker. Unrelated events on your Google Calendar will NEVER be deleted.
+        </p>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-en="Cancel" data-hi="रद्द करें">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDeleteCalEvents"
+                  onclick="window.TithiAuth && window.TithiAuth.confirmDeleteCalendarEvents()">
+            <span data-en="Delete Tithi Events" data-hi="तिथि इवेंट्स हटाएं">Delete Tithi Events</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upgrade to Tithi Plus Modal -->
+<div class="modal fade" id="upgradePlusModal" tabindex="-1" aria-labelledby="upgradePlusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header auth-modal-header text-white">
+        <h5 class="modal-title fw-bold" id="upgradePlusModalLabel">
+          <i class="fas fa-crown text-warning me-2"></i>
+          <span data-en="Tithi Plus Features" data-hi="तिथि प्लस सुविधाएँ">Tithi Plus Features</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <ul class="small mb-3">
+          <li class="mb-1" data-en="Unlimited saved family birth profiles" data-hi="असीमित सहेजी गई जन्म प्रोफ़ाइल">Unlimited saved family birth profiles</li>
+          <li class="mb-1" data-en="Sync all saved profiles in bulk" data-hi="सभी सहेजी गई प्रोफ़ाइलों का बल्क सिंक">Sync all saved profiles in bulk</li>
+          <li class="mb-1" data-en="Multi-year upcoming, historical specific year & custom year range (1583–2500, up to 120 years per calculation)"
+              data-hi="बहु-वर्षीय, ऐतिहासिक विशिष्ट वर्ष और कस्टम वर्ष सीमा सिंक (1583–2500)">
+            Multi-year upcoming, historical specific year &amp; custom year range (1583–2500, up to 120 years per calculation)
+          </li>
+          <li class="mb-1" data-en="Delete events within a selected year range" data-hi="चयनित वर्ष सीमा के इवेंट्स हटाएं">Delete events within a selected year range</li>
+          <li data-en="Ad-free experience" data-hi="विज्ञापन-मुक्त अनुभव">Ad-free experience</li>
+        </ul>
+        <div id="upgradeModalStatusBox" class="alert alert-info small mb-0">
+          <span data-en="Online paid upgrades (Razorpay) are prepared in the backend and will launch soon. If you haven't used your 14-day free trial yet, you can activate it with no payment card required."
+                data-hi="ऑनलाइन भुगतान अपग्रेड (Razorpay) जल्द ही उपलब्ध होगा। यदि आपने अभी तक अपना 14-दिन का निःशुल्क ट्रायल उपयोग नहीं किया है, तो बिना कार्ड के इसे शुरू कर सकते हैं।">
+            Online paid upgrades (Razorpay) are prepared in the backend and will launch soon. If you haven't used your 14-day free trial yet, you can activate it with no payment card required.
+          </span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-en="Close" data-hi="बंद करें">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Saved Birth Profile Confirmation Modal -->
+<div class="modal fade" id="deleteProfileModal" tabindex="-1" aria-labelledby="deleteProfileModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title fw-bold" id="deleteProfileModalLabel">
+          <i class="fas fa-trash-alt me-2"></i>
+          <span data-en="Delete Saved Birth Profile" data-hi="जन्म प्रोफ़ाइल हटाएं">Delete Saved Birth Profile</span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body p-4">
+        <input type="hidden" id="deleteProfileTargetId" />
+        <div id="deleteProfileAlert" class="alert d-none" role="alert"></div>
+        <p id="deleteProfileConsequenceText" class="small text-muted mb-3"></p>
+        <div id="deleteProfileGoogleOptionWrap" class="form-check p-3 rounded border bg-light mb-3 d-none">
+          <input class="form-check-input ms-0 me-2" type="checkbox" id="deleteProfileGoogleEventsCheck" />
+          <label class="form-check-label small fw-semibold" for="deleteProfileGoogleEventsCheck"
+                 data-en="Also delete Tithi-created Google Calendar events for this profile"
+                 data-hi="इस प्रोफ़ाइल के लिए तिथि द्वारा बनाए गए Google कैलेंडर इवेंट्स भी हटाएं">
+            Also delete Tithi-created Google Calendar events for this profile
+          </label>
+        </div>
+        <div class="d-flex justify-content-end gap-2">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-en="Cancel" data-hi="रद्द करें">Cancel</button>
+          <button type="button" class="btn btn-danger" id="btnConfirmDeleteProfile"
+                  onclick="window.TithiAuth && window.TithiAuth.confirmDeleteProfile()">
+            <span data-en="Delete Profile" data-hi="प्रोफ़ाइल हटाएं">Delete Profile</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Delete Account Confirmation Modal -->
 <div class="modal fade" id="deleteAccountModal" tabindex="-1" aria-labelledby="deleteAccountModalLabel" aria-hidden="true">
@@ -167,9 +406,9 @@
       <div class="modal-body p-4">
         <div id="deleteAccountAlert" class="alert d-none" role="alert"></div>
         <p class="small text-muted"
-           data-en="This will permanently delete your login account, all saved birth profiles, and all calculation history. This action is irreversible."
-           data-hi="यह आपके लॉगिन खाते, सभी सहेजी गई जन्म प्रोफ़ाइल और सभी गणना इतिहास को स्थायी रूप से हटा देगा।">
-          This will permanently delete your login account, all saved birth profiles, and all calculation history. This action is irreversible.
+           data-en="This will permanently delete your login account, all saved birth profiles, calculation history, entitlement status, and Tithi Google connection records (and revoke OAuth tokens). External Google Calendar events stay in Google Calendar unless you deleted them beforehand."
+           data-hi="यह आपके लॉगिन खाते, सभी सहेजी गई जन्म प्रोफ़ाइल, गणना इतिहास और तिथि के Google कनेक्शन रिकॉर्ड स्थायी रूप से हटा देगा और OAuth टोकन रद्द कर देगा। बाहरी Google कैलेंडर इवेंट्स तब तक सुरक्षित रहेंगे जब तक आपने उन्हें पहले ही न हटाया हो।">
+          This will permanently delete your login account, all saved birth profiles, calculation history, entitlement status, and Tithi Google connection records (and revoke OAuth tokens). External Google Calendar events stay in Google Calendar unless you deleted them beforehand.
         </p>
         <div class="mb-3">
           <label for="deleteConfirmInput" class="form-label fw-semibold small"
