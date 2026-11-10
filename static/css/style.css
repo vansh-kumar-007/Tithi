@@ -1,0 +1,618 @@
+/* =========================================================
+   Hindu Tithi Birthday Calculator — Main Stylesheet
+   ========================================================= */
+
+:root {
+  --saffron:    #FF8C00;
+  --saffron-dk: #E07000;
+  --navy:       #1B2A4A;
+  --navy-lt:    #2C3E50;
+  --cream:      #FFF8F0;
+  --gold:       #D4A017;
+  --text:       #2D2D2D;
+  --muted:      #6C757D;
+  --radius:     12px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  font-family: 'Poppins', sans-serif;
+  color: var(--text);
+  background: var(--cream);
+  overflow-x: hidden;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+main { flex: 1; }
+.text-saffron  { color: var(--saffron) !important; }
+.bg-saffron    { background-color: var(--saffron) !important; }
+.btn-saffron {
+  background: var(--saffron);
+  color: #fff;
+  border: none;
+}
+.btn-saffron:hover { background: var(--saffron-dk); color: #fff; }
+
+/* ── Navbar ── */
+.navbar {
+  background: var(--navy);
+  padding: 1rem 0;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+}
+.navbar-brand { font-weight: 700; font-size: 1.2rem; color: #fff !important; }
+.om-symbol { font-size: 1.4rem; }
+.nav-link { color: rgba(255,255,255,0.85) !important; font-weight: 500; }
+.nav-link:hover { color: var(--saffron) !important; }
+.btn-lang {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.2);
+  margin: 0 2px;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+.btn-lang.active, .btn-lang:hover {
+  background: var(--saffron);
+  color: #fff;
+  border-color: var(--saffron);
+}
+.language-toggle { display: flex; align-items: center; }
+
+/* ── Hero ── */
+.hero-section {
+  background: linear-gradient(135deg, var(--navy) 0%, #2C3E50 60%, #1a3058 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  padding: 3rem 0 4rem;
+}
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+.hero-section > .container {
+  position: relative;
+  z-index: 1;
+}
+.min-vh-85 { min-height: 85vh; }
+.hero-badge {
+  display: inline-block;
+  background: rgba(255,140,0,0.2);
+  border: 1px solid rgba(255,140,0,0.4);
+  color: var(--saffron);
+  padding: 0.3rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+.hero-title {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 700;
+  line-height: 1.15;
+  margin-bottom: 1rem;
+}
+.hero-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.6;
+  max-width: 540px;
+}
+.hero-features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-top: 1.5rem;
+}
+.feature-pill {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.9);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.82rem;
+}
+.btn-hero {
+  position: relative;
+  z-index: 2;
+  background: var(--saffron);
+  color: #fff;
+  border: none;
+  padding: 0.9rem 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(255,140,0,0.4);
+  transition: all 0.3s;
+}
+.btn-hero:hover {
+  background: var(--saffron-dk);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255,140,0,0.5);
+}
+
+/* Mandala graphic */
+.hero-graphic {
+  position: relative;
+  width: 320px;
+  height: 320px;
+}
+.mandala-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(255,140,0,0.3);
+  animation: rotate 20s linear infinite;
+}
+.ring-1 { width: 100%; height: 100%; top: 0; left: 0; }
+.ring-2 { width: 75%; height: 75%; top: 12.5%; left: 12.5%; border-color: rgba(255,255,255,0.15); animation-direction: reverse; animation-duration: 15s; }
+.ring-3 { width: 50%; height: 50%; top: 25%; left: 25%; border-color: rgba(255,140,0,0.2); animation-duration: 10s; }
+.mandala-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%,-50%);
+  font-size: 3rem;
+  animation: pulse 3s ease-in-out infinite;
+}
+.planet-dot {
+  position: absolute;
+  font-size: 1.5rem;
+  animation: orbit 15s linear infinite;
+}
+.dot-moon { top: 10%; left: 50%; animation-duration: 20s; }
+.dot-sun  { bottom: 15%; right: 10%; animation-duration: 25s; animation-direction: reverse; }
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%,-50%) scale(1); }
+  50%       { transform: translate(-50%,-50%) scale(1.1); }
+}
+@keyframes orbit {
+  from { transform: translateX(-8px); }
+  50%  { transform: translateX(8px) translateY(-5px); }
+  to   { transform: translateX(-8px); }
+}
+
+/* ── Calculator Section ── */
+.calculator-section { background: var(--cream); }
+.section-title {
+  font-weight: 700;
+  color: var(--navy);
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+.section-subtitle { color: var(--muted); }
+.section-header .section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 3px;
+  background: var(--saffron);
+  margin: 0.5rem auto 0;
+  border-radius: 2px;
+}
+
+.calc-card {
+  border: none;
+  border-radius: var(--radius);
+  background: #fff;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.form-step { margin-bottom: 0.5rem; }
+.step-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+}
+.step-number {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.step-title { font-weight: 600; color: var(--navy); margin-bottom: 0; }
+.step-desc  { font-size: 0.88rem; }
+
+/* Time mode tabs */
+.time-mode-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.time-mode-btn {
+  flex: 1;
+  min-width: 120px;
+  border: 2px solid #DEE2E6;
+  color: var(--navy);
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.time-mode-btn:hover { border-color: var(--saffron); color: var(--saffron); }
+.time-mode-btn.active {
+  border-color: var(--saffron);
+  background: rgba(255,140,0,0.08);
+  color: var(--saffron);
+}
+
+/* Period grid */
+.period-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.period-btn {
+  border: 2px solid #DEE2E6;
+  background: #fff;
+  border-radius: var(--radius);
+  padding: 0.6rem 0.5rem;
+  font-size: 0.82rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  transition: all 0.2s;
+}
+.period-btn:hover, .period-btn.active {
+  border-color: var(--saffron);
+  background: rgba(255,140,0,0.06);
+  color: var(--saffron);
+}
+.period-btn small { color: var(--muted); font-size: 0.72rem; }
+
+/* Convention info */
+.convention-info {
+  background: rgba(255,140,0,0.06);
+  border: 1px solid rgba(255,140,0,0.2);
+  font-size: 0.88rem;
+}
+
+/* Calculate button */
+.btn-calculate {
+  background: linear-gradient(135deg, var(--saffron), #FF5500);
+  color: #fff;
+  border: none;
+  padding: 1rem 3rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+  border-radius: 50px;
+  box-shadow: 0 4px 20px rgba(255,140,0,0.3);
+  transition: all 0.3s;
+  min-width: 260px;
+}
+.btn-calculate:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(255,140,0,0.45);
+  color: #fff;
+}
+.btn-calculate:disabled { opacity: 0.65; cursor: not-allowed; }
+
+.coords-display {
+  font-size: 0.82rem;
+  background: rgba(27,42,74,0.04);
+  min-height: 54px;
+}
+
+/* ── Loading Overlay ── */
+#loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(27,42,74,0.85);
+  backdrop-filter: blur(4px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.loading-content { text-align: center; color: #fff; }
+.mandala-spinner {
+  font-size: 4rem;
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.progress-steps {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.step-dot {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+  transition: all 0.3s;
+}
+.step-dot.active {
+  background: var(--saffron);
+  border-color: var(--saffron);
+  color: #fff;
+}
+
+/* ── Results Section ── */
+.results-hero {
+  background: linear-gradient(135deg, var(--navy), #2C3E50);
+  color: #fff;
+  padding: 3rem 0;
+  text-align: center;
+}
+.results-title { font-size: 2rem; font-weight: 700; }
+.results-subtitle { color: rgba(255,255,255,0.75); }
+
+.panchang-card {
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.07);
+  overflow: hidden;
+  margin-bottom: 1.5rem;
+}
+.panchang-card .card-header {
+  background: var(--navy);
+  color: #fff;
+  font-weight: 600;
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.panchang-card .card-body { padding: 1.5rem; }
+
+.panchang-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 1rem;
+}
+.panchang-item {
+  background: var(--cream);
+  border-radius: 8px;
+  padding: 0.8rem 1rem;
+  border-left: 3px solid var(--saffron);
+}
+.panchang-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.panchang-value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--navy);
+  margin-top: 0.1rem;
+}
+.panchang-value-hi {
+  font-family: 'Noto Sans Devanagari', sans-serif;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* Next birthday countdown */
+.next-birthday-banner {
+  background: linear-gradient(135deg, var(--saffron), #FF5500);
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 1.5rem 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 20px rgba(255,140,0,0.3);
+}
+.next-birthday-countdown { font-size: 2.3rem; font-weight: 700; }
+.next-birthday-label { font-size: 0.9rem; opacity: 0.9; }
+
+/* Candidate selector tabs */
+.candidate-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.candidate-tab-btn {
+  border: 2px solid #DEE2E6;
+  background: #fff;
+  color: var(--navy);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.candidate-tab-btn.active {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+/* Visual Year-by-Year Calendar Grid */
+.year-visual-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 0.65rem;
+  padding: 1rem 1.25rem;
+  background: #FAFAFC;
+  border-bottom: 1px solid #ECEEEF;
+}
+.year-tile {
+  background: #fff;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 0.55rem 0.7rem;
+  text-align: center;
+  transition: transform 0.15s;
+}
+.year-tile:hover { transform: translateY(-2px); }
+.year-tile .yt-year { font-weight: 700; font-size: 0.9rem; color: var(--navy); }
+.year-tile .yt-date { font-size: 0.8rem; color: var(--text); margin: 0.15rem 0; }
+.year-tile .yt-day  { font-size: 0.72rem; color: var(--muted); }
+.year-tile.past     { opacity: 0.7; background: #F8F9FA; }
+.year-tile.current  { border: 2px solid var(--saffron); background: rgba(255,140,0,0.08); }
+.year-tile.upcoming { border-left: 3px solid #198754; }
+.year-tile.kshaya   { border-left: 3px solid #DC3545; }
+.year-tile.vriddhi  { border-left: 3px solid #D4A017; }
+
+/* Birthday table */
+.birthday-table-wrapper { overflow-x: auto; }
+.birthday-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.9rem;
+}
+.birthday-table thead th {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.8rem 1rem;
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.birthday-table tbody tr { transition: background 0.15s; }
+.birthday-table tbody tr:hover { background: rgba(255,140,0,0.05); }
+.birthday-table tbody td { padding: 0.75rem 1rem; border-bottom: 1px solid #F0F0F0; vertical-align: middle; }
+.birthday-table .row-past  { opacity: 0.65; }
+.birthday-table .row-today { background: rgba(255,140,0,0.12); }
+
+.status-badge {
+  display: inline-block;
+  padding: 0.2rem 0.65rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.status-confirmed      { background: rgba(25,135,84,0.15); color: #198754; }
+.status-kshaya         { background: rgba(220,53,69,0.15); color: #DC3545; }
+.status-vriddhi        { background: rgba(255,193,7,0.2);  color: #856404; }
+.status-adhika         { background: rgba(111,66,193,0.15); color: #6F42C1; }
+.status-multiple-dates { background: rgba(13,110,253,0.15); color: #0D6EFD; }
+.status-not-found      { background: rgba(108,117,125,0.15); color: #6C757D; }
+
+/* Export buttons */
+.export-toolbar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0.75rem 0;
+}
+.btn-export {
+  border: 2px solid var(--navy);
+  color: var(--navy);
+  background: #fff;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.btn-export:hover {
+  background: var(--navy);
+  color: #fff;
+}
+
+/* Ambiguity alert */
+.ambiguity-alert {
+  background: rgba(255,140,0,0.08);
+  border: 1px solid rgba(255,140,0,0.35);
+  border-radius: var(--radius);
+  padding: 1rem 1.2rem;
+  font-size: 0.9rem;
+  color: var(--navy);
+  margin-bottom: 1.2rem;
+}
+
+/* ── How It Works & FAQ ── */
+.how-section { background: #fff; }
+.how-card {
+  padding: 2rem 1.5rem;
+  border-radius: var(--radius);
+  background: var(--cream);
+  height: 100%;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.how-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+}
+.how-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+.faq-section { background: var(--cream); }
+.accordion-button:not(.collapsed) {
+  background: rgba(255,140,0,0.08);
+  color: var(--saffron);
+  box-shadow: none;
+}
+.accordion-button:focus { box-shadow: 0 0 0 0.2rem rgba(255,140,0,0.25); }
+
+/* ── Footer ── */
+.footer {
+  background: var(--navy);
+  color: rgba(255,255,255,0.75);
+}
+.om-divider { font-size: 1.5rem; margin-bottom: 0.5rem; }
+
+.geocode-loading { color: var(--saffron); }
+.geocode-success { color: #198754; }
+.geocode-error   { color: #DC3545; }
+
+/* Quick city chips */
+.city-chip {
+  font-size: 0.75rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 15px;
+}
+
+@media (max-width: 768px) {
+  .hero-section { padding: 2rem 0 3rem; }
+  .min-vh-85 { min-height: auto; padding: 2rem 0; }
+  .time-mode-btn { min-width: 100px; }
+  .period-grid { grid-template-columns: repeat(2, 1fr); }
+  .panchang-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 480px) {
+  .panchang-grid { grid-template-columns: 1fr; }
+}
+
+.font-devanagari {
+  font-family: 'Noto Sans Devanagari', 'Poppins', sans-serif;
+}
+.error-page { max-width: 400px; margin: 5rem auto; }
+.error-icon { font-size: 4rem; }
+
+@media print {
+  nav, .hero-section, #calculator, #how-it-works, #faq, footer,
+  .export-toolbar, .candidate-tabs, .recalc-actions {
+    display: none !important;
+  }
+  body { background: #fff; }
+  .panchang-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+}

@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}Hindu Tithi Birthday Calculator{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg navbar-dark">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+      <span class="om-symbol">🕉</span>
+      <span data-en="Hindu Tithi Calculator" data-hi="हिंदू तिथि कैलकुलेटर">Hindu Tithi Calculator</span>
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto align-items-lg-center">
+        <li class="nav-item"><a class="nav-link" href="/#calculator" data-en="Calculator" data-hi="कैलकुलेटर">Calculator</a></li>
+        <li class="nav-item"><a class="nav-link" href="/#how-it-works" data-en="How It Works" data-hi="यह कैसे काम करता है">How It Works</a></li>
+        <li class="nav-item"><a class="nav-link" href="/#faq" data-en="FAQ" data-hi="सामान्य प्रश्न">FAQ</a></li>
+        <li class="nav-item">
+          <div class="language-toggle ms-lg-2 mt-2 mt-lg-0">
+            <button id="btn-lang-en" type="button" class="btn btn-sm btn-lang active" onclick="setLang('en')">EN</button>
+            <button id="btn-lang-hi" type="button" class="btn btn-sm btn-lang" onclick="setLang('hi')">हिं</button>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer mt-auto py-4">
+  <div class="container text-center">
+    <div class="om-divider">🕉</div>
+    <p class="mb-1">
+      <strong data-en="Hindu Tithi Birthday Calculator" data-hi="हिंदू तिथि जन्मदिन कैलकुलेटर">Hindu Tithi Birthday Calculator</strong>
+    </p>
+    <p class="text-muted small" style="color: rgba(255,255,255,0.65) !important;">
+      Calculations powered by Swiss Ephemeris (pyswisseph) with configurable ayanamsha and Panchang conventions.
+      <br/>For important religious occasions, please verify with a qualified Jyotish practitioner.
+    </p>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.3/js/bootstrap.bundle.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

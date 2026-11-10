@@ -1,0 +1,523 @@
+{% extends "base.html" %}
+{% block title %}Discover Your Hindu Birthday — Tithi Calculator{% endblock %}
+
+{% block content %}
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<section class="hero-section">
+  <div class="container">
+    <div class="row align-items-center min-vh-85">
+      <div class="col-lg-7 hero-text">
+        <div class="hero-badge">
+          <span data-en="🌙 Astronomical Panchang Calculator" data-hi="🌙 खगोलीय पंचांग कैलकुलेटर">🌙 Astronomical Panchang Calculator</span>
+        </div>
+        <h1 class="hero-title" data-en="Discover Your Hindu Birthday" data-hi="अपना हिंदू जन्मदिन खोजें">
+          Discover Your Hindu Birthday
+        </h1>
+        <p class="hero-subtitle"
+           data-en="Find your birth Tithi and discover your Hindu birthday across the years — powered by Swiss Ephemeris astronomical calculations."
+           data-hi="अपनी जन्म तिथि खोजें और वर्षों में अपना हिंदू जन्मदिन जानें — स्विस एफेमेरिस खगोलीय गणनाओं द्वारा संचालित।">
+          Find your birth Tithi and discover your Hindu birthday across the years — powered by Swiss Ephemeris astronomical calculations.
+        </p>
+        <div class="hero-features">
+          <div class="feature-pill" data-en="🌙 Accurate Tithi" data-hi="🌙 सटीक तिथि">🌙 Accurate Tithi</div>
+          <div class="feature-pill" data-en="⭐ Full Panchang" data-hi="⭐ संपूर्ण पंचांग">⭐ Full Panchang</div>
+          <div class="feature-pill" data-en="📅 Multi-year Calendar" data-hi="📅 बहु-वर्षीय कैलेंडर">📅 Multi-year Calendar</div>
+          <div class="feature-pill" data-en="📥 PDF / Excel / ICS" data-hi="📥 PDF / Excel / ICS">📥 PDF / Excel / ICS</div>
+        </div>
+        <a href="#calculator" id="btn-hero-calculate" class="btn btn-hero mt-4">
+          <i class="fas fa-calculator me-2"></i>
+          <span data-en="Calculate Now" data-hi="अभी गणना करें">Calculate Now</span>
+        </a>
+      </div>
+      <div class="col-lg-5 d-none d-lg-flex justify-content-center">
+        <div class="hero-graphic">
+          <div class="mandala-ring ring-1"></div>
+          <div class="mandala-ring ring-2"></div>
+          <div class="mandala-ring ring-3"></div>
+          <div class="mandala-center">🕉</div>
+          <div class="planet-dot dot-moon" title="Moon / चंद्र">🌙</div>
+          <div class="planet-dot dot-sun" title="Sun / सूर्य">☀️</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ CALCULATOR FORM ═══════════════════ -->
+<section id="calculator" class="calculator-section py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title" data-en="Enter Your Birth Details" data-hi="अपना जन्म विवरण दर्ज करें">
+        Enter Your Birth Details
+      </h2>
+      <p class="section-subtitle"
+         data-en="All fields except birth time are required for accurate calculations."
+         data-hi="सटीक गणना के लिए जन्म समय को छोड़कर सभी फ़ील्ड आवश्यक हैं।">
+        All fields except birth time are required for accurate calculations.
+      </p>
+    </div>
+
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="calc-card card shadow-lg">
+          <div class="card-body p-4 p-md-5">
+            <form id="mainForm" novalidate>
+
+              <!-- Step 1: Date of Birth -->
+              <div class="form-step" id="step-1">
+                <div class="step-header">
+                  <div class="step-number">1</div>
+                  <div>
+                    <h4 class="step-title" data-en="Date of Birth" data-hi="जन्म तिथि">Date of Birth</h4>
+                    <p class="step-desc text-muted"
+                       data-en="Enter your Gregorian (English) date of birth."
+                       data-hi="अपनी ग्रेगोरियन (अंग्रेज़ी) जन्म तिथि दर्ज करें।">
+                      Enter your Gregorian (English) date of birth.
+                    </p>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold" for="birth_date">
+                      <i class="fas fa-calendar me-1 text-saffron"></i>
+                      <span data-en="Date of Birth" data-hi="जन्म तिथि">Date of Birth</span>
+                    </label>
+                    <input type="date" class="form-control form-control-lg" id="birth_date"
+                           name="birth_date" required min="1583-01-01" max="{{ current_year }}-12-31" />
+                    <div class="invalid-feedback" data-en="Please enter a valid date of birth (1583–present)." data-hi="कृपया एक वैध जन्म तिथि दर्ज करें।">
+                      Please enter a valid date of birth (1583–present).
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4" />
+
+              <!-- Step 2: Birthplace -->
+              <div class="form-step" id="step-2">
+                <div class="step-header">
+                  <div class="step-number">2</div>
+                  <div>
+                    <h4 class="step-title" data-en="Birthplace" data-hi="जन्मस्थान">Birthplace</h4>
+                    <p class="step-desc text-muted"
+                       data-en="Your birthplace determines the local sunrise time and timezone, essential for Tithi calculation."
+                       data-hi="आपका जन्मस्थान स्थानीय सूर्योदय समय और समय क्षेत्र निर्धारित करता है, जो तिथि गणना के लिए आवश्यक है।">
+                      Your birthplace determines the local sunrise time and timezone, essential for Tithi calculation.
+                    </p>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-8">
+                    <label class="form-label fw-semibold" for="location_query">
+                      <i class="fas fa-map-marker-alt me-1 text-saffron"></i>
+                      <span data-en="City / District / State / Country" data-hi="शहर / जिला / राज्य / देश">City / District / State / Country</span>
+                    </label>
+                    <div class="input-group">
+                      <input type="text" class="form-control form-control-lg" id="location_query"
+                             placeholder="e.g. Bijnor, Uttar Pradesh, India" autocomplete="off" />
+                      <button class="btn btn-saffron" type="button" id="btn-geocode" title="Search location">
+                        <i class="fas fa-search-location"></i>
+                      </button>
+                    </div>
+                    <div class="d-flex flex-wrap gap-1 mt-2 align-items-center">
+                      <small class="text-muted me-1" data-en="Quick pick:" data-hi="त्वरित चयन:">Quick pick:</small>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="Bijnor, Uttar Pradesh, India" data-lat="29.3724" data-lon="78.1358" data-tz="Asia/Kolkata">Bijnor</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="New Delhi, India" data-lat="28.6139" data-lon="77.2090" data-tz="Asia/Kolkata">Delhi</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="Mumbai, Maharashtra, India" data-lat="19.0760" data-lon="72.8777" data-tz="Asia/Kolkata">Mumbai</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="Kolkata, West Bengal, India" data-lat="22.5726" data-lon="88.3639" data-tz="Asia/Kolkata">Kolkata</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="London, United Kingdom" data-lat="51.5074" data-lon="-0.1278" data-tz="Europe/London">London</button>
+                      <button type="button" class="btn btn-outline-secondary btn-sm city-chip" data-name="New York, United States" data-lat="40.7128" data-lon="-74.0060" data-tz="America/New_York">New York</button>
+                    </div>
+                    <div id="geocode-status" class="mt-1"></div>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" data-en="Detected Coordinates & Timezone" data-hi="निर्देशांक और समय क्षेत्र">Detected Coordinates &amp; Timezone</label>
+                    <div class="coords-display p-2 rounded border" id="coords-display" style="display:none;">
+                      <small class="text-muted d-block">
+                        <i class="fas fa-crosshairs me-1"></i>
+                        <span id="lat-display">—</span>, <span id="lon-display">—</span>
+                      </small>
+                      <small class="text-muted d-block">
+                        <i class="fas fa-clock me-1"></i>
+                        <span id="tz-display">—</span>
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hidden fields for coords -->
+                <input type="hidden" id="lat" name="lat" />
+                <input type="hidden" id="lon" name="lon" />
+                <input type="hidden" id="timezone" name="timezone" />
+                <input type="hidden" id="location_name" name="location_name" />
+
+                <!-- Manual override for coordinates & timezone -->
+                <div class="mt-2">
+                  <a class="small text-muted" data-bs-toggle="collapse" href="#manualCoords">
+                    <i class="fas fa-edit me-1"></i>
+                    <span data-en="Adjust coordinates or timezone manually" data-hi="निर्देशांक या समय क्षेत्र मैन्युअल रूप से बदलें">Adjust coordinates or timezone manually</span>
+                  </a>
+                  <div class="collapse" id="manualCoords">
+                    <div class="row g-2 mt-1">
+                      <div class="col-md-3">
+                        <input type="number" class="form-control form-control-sm" id="lat_manual"
+                               placeholder="Latitude (-90 to 90)" step="0.0001" min="-90" max="90" />
+                      </div>
+                      <div class="col-md-3">
+                        <input type="number" class="form-control form-control-sm" id="lon_manual"
+                               placeholder="Longitude (-180 to 180)" step="0.0001" min="-180" max="180" />
+                      </div>
+                      <div class="col-md-4">
+                        <input type="text" class="form-control form-control-sm" id="tz_manual" list="iana-timezones"
+                               placeholder="Timezone (auto-detected if blank)" />
+                        <datalist id="iana-timezones">
+                          {% for tzname in common_timezones %}
+                          <option value="{{ tzname }}"></option>
+                          {% endfor %}
+                        </datalist>
+                      </div>
+                      <div class="col-md-2">
+                        <button class="btn btn-sm btn-outline-secondary w-100" type="button" id="btn-manual-coords">
+                          Apply
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4" />
+
+              <!-- Step 3: Birth Time -->
+              <div class="form-step" id="step-3">
+                <div class="step-header">
+                  <div class="step-number">3</div>
+                  <div>
+                    <h4 class="step-title" data-en="Birth Time (Optional)" data-hi="जन्म समय (वैकल्पिक)">Birth Time (Optional)</h4>
+                    <p class="step-desc text-muted"
+                       data-en="Providing birth time improves accuracy. If unknown, we analyze the full birth date."
+                       data-hi="जन्म समय देने से सटीकता बढ़ती है। अज्ञात होने पर, हम पूरी जन्म तिथि का विश्लेषण करते हैं।">
+                      Providing birth time improves accuracy. If unknown, we analyze the full birth date.
+                    </p>
+                  </div>
+                </div>
+
+                <div class="time-mode-tabs mb-3">
+                  <button type="button" class="btn time-mode-btn active" data-mode="unknown" id="tab-unknown">
+                    <i class="fas fa-question-circle me-1"></i>
+                    <span data-en="Unknown" data-hi="अज्ञात">Unknown</span>
+                  </button>
+                  <button type="button" class="btn time-mode-btn" data-mode="approximate" id="tab-approximate">
+                    <i class="fas fa-clock me-1"></i>
+                    <span data-en="Approximate" data-hi="अनुमानित">Approximate</span>
+                  </button>
+                  <button type="button" class="btn time-mode-btn" data-mode="exact" id="tab-exact">
+                    <i class="fas fa-stopwatch me-1"></i>
+                    <span data-en="Exact" data-hi="सटीक">Exact</span>
+                  </button>
+                </div>
+                <input type="hidden" id="birth_time_mode" name="birth_time_mode" value="unknown" />
+
+                <!-- Unknown panel -->
+                <div id="panel-unknown" class="time-panel">
+                  <div class="alert alert-info d-flex align-items-start gap-2 mb-0">
+                    <i class="fas fa-info-circle mt-1 flex-shrink-0"></i>
+                    <div data-en="We calculate all Tithis across your entire local birth date and show every possibility if a transition occurred. No arbitrary default time is assumed."
+                         data-hi="हम आपकी पूरी जन्म तिथि पर हुई सभी तिथियों की गणना करेंगे और किसी भी बदलाव की स्थिति में सभी संभावनाएं दिखाएंगे। कोई मनमाना डिफ़ॉल्ट समय नहीं माना जाता है।">
+                      We calculate all Tithis across your entire local birth date and show every possibility if a transition occurred. No arbitrary default time is assumed.
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Approximate panel -->
+                <div id="panel-approximate" class="time-panel" style="display:none;">
+                  <div class="row g-3">
+                    <div class="col-12 mb-1">
+                      <label class="form-label fw-semibold" data-en="Select Approximate Period" data-hi="अनुमानित अवधि चुनें">Select Approximate Period</label>
+                      <div class="period-grid">
+                        <button type="button" class="btn period-btn" data-start="04:00" data-end="06:00">
+                          🌅 <span data-en="Early Morning" data-hi="तड़के सुबह">Early Morning</span>
+                          <small>4–6 AM</small>
+                        </button>
+                        <button type="button" class="btn period-btn" data-start="06:00" data-end="09:00">
+                          🌄 <span data-en="Morning" data-hi="सुबह">Morning</span>
+                          <small>6–9 AM</small>
+                        </button>
+                        <button type="button" class="btn period-btn" data-start="09:00" data-end="12:00">
+                          ☀️ <span data-en="Late Morning" data-hi="देर सुबह">Late Morning</span>
+                          <small>9 AM–12 PM</small>
+                        </button>
+                        <button type="button" class="btn period-btn" data-start="12:00" data-end="16:00">
+                          🌞 <span data-en="Afternoon" data-hi="दोपहर">Afternoon</span>
+                          <small>12–4 PM</small>
+                        </button>
+                        <button type="button" class="btn period-btn" data-start="16:00" data-end="20:00">
+                          🌆 <span data-en="Evening" data-hi="शाम">Evening</span>
+                          <small>4–8 PM</small>
+                        </button>
+                        <button type="button" class="btn period-btn" data-start="20:00" data-end="23:59">
+                          🌙 <span data-en="Night" data-hi="रात">Night</span>
+                          <small>8 PM–12 AM</small>
+                        </button>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" data-en="Or enter custom time range:" data-hi="या कस्टम समय सीमा दर्ज करें:">Or enter custom time range:</label>
+                      <div class="d-flex align-items-center gap-2">
+                        <input type="time" class="form-control" id="approx_start" placeholder="From" />
+                        <span>to</span>
+                        <input type="time" class="form-control" id="approx_end" placeholder="To" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Exact panel -->
+                <div id="panel-exact" class="time-panel" style="display:none;">
+                  <div class="row">
+                    <div class="col-md-4">
+                      <label class="form-label fw-semibold" for="birth_time" data-en="Birth Time (24h / Local)" data-hi="जन्म समय">Birth Time (Local)</label>
+                      <input type="time" class="form-control form-control-lg" id="birth_time" name="birth_time" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <hr class="my-4" />
+
+              <!-- Step 4: Preferences -->
+              <div class="form-step" id="step-4">
+                <div class="step-header">
+                  <div class="step-number">4</div>
+                  <div>
+                    <h4 class="step-title" data-en="Calculation Preferences" data-hi="गणना प्राथमिकताएँ">Calculation Preferences</h4>
+                  </div>
+                </div>
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="lunar_system" data-en="Lunar Month System" data-hi="चंद्र मास प्रणाली">Lunar Month System</label>
+                    <select class="form-select" id="lunar_system" name="lunar_system">
+                      <option value="amanta" selected>Amanta (New Moon to New Moon)</option>
+                      <option value="purnimanta">Purnimanta (Full Moon to Full Moon)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="observance_method" data-en="Annual Observance Convention" data-hi="वार्षिक उत्सव नियम">Annual Observance Convention</label>
+                    <select class="form-select" id="observance_method" name="observance_method">
+                      {% for key, label in observance_options.items() %}
+                      <option value="{{ key }}" {% if key == 'sunrise' %}selected{% endif %}>{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="adhika_rule" data-en="Adhika Masa (Leap Month) Rule" data-hi="अधिक मास नियम">Adhika Masa (Leap Month) Rule</label>
+                    <select class="form-select" id="adhika_rule" name="adhika_rule">
+                      <option value="nija" selected>Regular Month (Nija) — Default</option>
+                      <option value="adhika">Adhika Month (when present)</option>
+                      <option value="both">Show Both Regular &amp; Adhika</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="ayanamsha" data-en="Ayanamsha" data-hi="अयनांश">Ayanamsha</label>
+                    <select class="form-select" id="ayanamsha" name="ayanamsha">
+                      {% for key, name in ayanamsha_options.items() %}
+                      <option value="{{ key }}" {% if key == 'lahiri' %}selected{% endif %}>{{ name }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="start_year" data-en="Year Range (From)" data-hi="वर्ष सीमा (से)">Year Range (From)</label>
+                    <input type="number" class="form-control" id="start_year" name="start_year"
+                           value="{{ current_year - 5 }}" min="1583" max="2500" />
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold" for="end_year" data-en="Year Range (To)" data-hi="वर्ष सीमा (तक)">Year Range (To)</label>
+                    <input type="number" class="form-control" id="end_year" name="end_year"
+                           value="{{ current_year + 10 }}" min="1583" max="2500" />
+                  </div>
+                </div>
+                <div class="mt-3 p-3 convention-info rounded" id="convention-explanation">
+                  <i class="fas fa-info-circle text-saffron me-2"></i>
+                  <strong>Convention:</strong> By default, your annual Hindu birthday is the date where your birth Tithi prevails at <strong>local sunrise (Udaya Tithi)</strong> in the regular (Nija) lunar month under the Amanta calendar. You can customize any of these traditions above.
+                </div>
+              </div>
+
+              <!-- Submit -->
+              <div class="text-center mt-5">
+                <button type="submit" class="btn btn-calculate btn-lg" id="btn-calculate">
+                  <i class="fas fa-om me-2"></i>
+                  <span data-en="Calculate Hindu Birthday" data-hi="हिंदू जन्मदिन की गणना करें">Calculate Hindu Birthday</span>
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Loading Overlay -->
+<div id="loading-overlay" style="display:none;">
+  <div class="loading-content">
+    <div class="mandala-spinner">🕉</div>
+    <h4 class="mt-3" data-en="Consulting the Stars…" data-hi="सितारों से परामर्श…">Consulting the Stars…</h4>
+    <p class="text-light opacity-75"
+       data-en="Calculating your Panchang using Swiss Ephemeris"
+       data-hi="स्विस एफेमेरिस का उपयोग करके आपका पंचांग गणना कर रहा है">
+      Calculating your Panchang using Swiss Ephemeris
+    </p>
+    <div class="progress-steps mt-3">
+      <span class="step-dot active" id="ps-1">🌙 Tithi</span>
+      <span class="step-dot" id="ps-2">⭐ Nakshatra</span>
+      <span class="step-dot" id="ps-3">🌅 Sunrise</span>
+      <span class="step-dot" id="ps-4">📅 Birthdays</span>
+    </div>
+  </div>
+</div>
+
+<!-- Results Section -->
+<section id="results-section" style="display:none;">
+  <div id="results-container"></div>
+</section>
+
+<!-- ═══════════════════ HOW IT WORKS ═══════════════════ -->
+<section id="how-it-works" class="how-section py-5">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title" data-en="How It Works" data-hi="यह कैसे काम करता है">How It Works</h2>
+    </div>
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="how-card text-center">
+          <div class="how-icon">📅</div>
+          <h5 data-en="Enter Details" data-hi="विवरण दर्ज करें">Enter Details</h5>
+          <p class="text-muted small"
+             data-en="Provide your Gregorian date of birth, birthplace, and optional birth time."
+             data-hi="अपनी ग्रेगोरियन जन्म तिथि, जन्मस्थान और वैकल्पिक जन्म समय प्रदान करें।">
+            Provide your Gregorian date of birth, birthplace, and optional birth time.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="how-card text-center">
+          <div class="how-icon">🌙</div>
+          <h5 data-en="Calculate Tithi" data-hi="तिथि की गणना">Calculate Tithi</h5>
+          <p class="text-muted small"
+             data-en="Swiss Ephemeris precisely calculates Sun and Moon positions to determine your birth Tithi, Nakshatra, Yoga, and Karana."
+             data-hi="स्विस एफेमेरिस आपकी जन्म तिथि, नक्षत्र, योग और करण निर्धारित करने के लिए सूर्य और चंद्रमा की स्थिति की गणना करता है।">
+            Swiss Ephemeris precisely calculates Sun and Moon positions to determine your birth Tithi, Nakshatra, Yoga, and Karana.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="how-card text-center">
+          <div class="how-icon">🌅</div>
+          <h5 data-en="Find Sunrise" data-hi="सूर्योदय खोजें">Find Sunrise</h5>
+          <p class="text-muted small"
+             data-en="For each year, we calculate the local sunrise at your birthplace and check which Tithi prevails at that moment."
+             data-hi="प्रत्येक वर्ष के लिए, हम आपके जन्मस्थान पर स्थानीय सूर्योदय की गणना करते हैं और उस समय प्रचलित तिथि की जांच करते हैं।">
+            For each year, we calculate the local sunrise at your birthplace and check which Tithi prevails at that moment.
+          </p>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="how-card text-center">
+          <div class="how-icon">🎂</div>
+          <h5 data-en="Hindu Birthday" data-hi="हिंदू जन्मदिन">Hindu Birthday</h5>
+          <p class="text-muted small"
+             data-en="The date when your birth Tithi prevails at sunrise in the matching lunar month is your Hindu Tithi birthday."
+             data-hi="समान चंद्र मास में सूर्योदय पर आपकी जन्म तिथि जिस दिन पड़ती है, वही आपका हिंदू तिथि जन्मदिन है।">
+            The date when your birth Tithi prevails at sunrise in the matching lunar month is your Hindu Tithi birthday.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════ FAQ ═══════════════════ -->
+<section id="faq" class="faq-section py-5 bg-light">
+  <div class="container">
+    <div class="section-header text-center mb-5">
+      <h2 class="section-title" data-en="Frequently Asked Questions" data-hi="अक्सर पूछे जाने वाले प्रश्न">Frequently Asked Questions</h2>
+    </div>
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <div class="accordion" id="faqAccordion">
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1"
+                      data-en="What is a Tithi?" data-hi="तिथि क्या होती है?">
+                What is a Tithi?
+              </button>
+            </h2>
+            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                A Tithi (तिथि) is a lunar day in the Hindu calendar defined by each 12° increase in angular separation between the Moon and Sun. Each lunar month has 30 Tithis — 15 in Shukla Paksha (waxing) and 15 in Krishna Paksha (waning). Because lunar orbital speed varies, a Tithi can last roughly 19 to 27 hours.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2"
+                      data-en="Why does my Hindu birthday differ from my Gregorian birthday?" data-hi="मेरा हिंदू जन्मदिन अंग्रेजी जन्मदिन से अलग क्यों होता है?">
+                Why does my Hindu birthday differ from my Gregorian birthday?
+              </button>
+            </h2>
+            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                The Hindu lunar year is about 11 days shorter than the solar Gregorian year, causing lunar dates to drift earlier each year until an intercalary month (Adhika Masa) realigns them approximately every 3 years.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3"
+                      data-en="What if I don't know my birth time?" data-hi="यदि मुझे अपना जन्म समय नहीं पता तो क्या होगा?">
+                What if I don't know my birth time?
+              </button>
+            </h2>
+            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                Select "Unknown" for birth time. The calculator analyzes your entire local birth date. If only one Tithi occurred on that day, your birth Tithi is identified with high confidence; if two Tithis occurred, both candidate calendars are generated for you.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4"
+                      data-en="What is Kshaya Tithi and Vriddhi Tithi?" data-hi="क्षय तिथि और वृद्धि तिथि क्या है?">
+                What is Kshaya Tithi and Vriddhi Tithi?
+              </button>
+            </h2>
+            <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                <strong>Kshaya Tithi (क्षय तिथि)</strong> — A skipped Tithi that begins after one sunrise and ends before the next, so it does not prevail at any sunrise. Both adjacent days are noted.<br/><br/>
+                <strong>Vriddhi Tithi (वृद्धि तिथि)</strong> — A repeated Tithi that spans two consecutive sunrises, offering two valid observance dates.
+              </div>
+            </div>
+          </div>
+          <div class="accordion-item">
+            <h2 class="accordion-header">
+              <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5"
+                      data-en="What is the difference between Amanta and Purnimanta?" data-hi="अमांत और पूर्णिमांत में क्या अंतर है?">
+                What is the difference between Amanta and Purnimanta?
+              </button>
+            </h2>
+            <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+              <div class="accordion-body">
+                In the <strong>Amanta</strong> system (common in South and West India), a lunar month runs from New Moon to New Moon. In the <strong>Purnimanta</strong> system (common in North India), a lunar month runs from Full Moon to Full Moon — Shukla Paksha shares the same month name in both, while regular Krishna Paksha takes the next month's name in Purnimanta.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
